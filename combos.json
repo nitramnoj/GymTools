@@ -1,7 +1,7 @@
 [
   {
     "label": "Selector + Timer",
-    "left": "https://nitramnoj.github.io/HIIT/",
-    "right": "https://nitramnoj.github.io/gymtimer/"
+    "left": "hiit/",
+    "right": "gymtimer/"
   }
 ]
