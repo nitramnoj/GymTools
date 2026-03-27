@@ -1,1 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kettlebell HIIT Selector</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page-bg: #ffffff;
+    --text-color: #111111;
+    --muted-text: #444444;
+    --panel-bg: #ffffff;
+    --border-color: #cccccc;
+    --button-bg: #f3f3f3;
+    --button-text: #111111;
+  }
 
+  html, body {
+    background: var(--page-bg);
+    color: var(--text-color);
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 760px;
+    margin: 24px auto;
+    padding: 0 16px;
+    line-height: 1.4;
+  }
+
+  h2 { margin: 0 0 16px; color: var(--text-color); }
+  .row { margin: 0 0 14px; }
+  label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color); }
+
+  select,
+  input,
+  button {
+    font-size: 16px;
+    padding: 8px;
+    color: var(--button-text);
+    background: var(--button-bg);
+    border: 1px solid var(--border-color);
+  }
+
+  select,
+  input[type="number"] {
+    width: 100%;
+    max-width: 360px;
+    background: var(--panel-bg);
+    color: var(--text-color);
+  }
+
+  .buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  button { cursor: pointer; }
+  a { color: var(--text-color); }
+
+  pre {
+    white-space: pre-wrap;
+    border: 1px solid var(--border-color);
+    background: var(--panel-bg);
+    color: var(--text-color);
+    padding: 12px;
+    min-height: 180px;
+    margin-top: 18px;
+    font-size: 18px;
+  }
+
+  .small { font-size: 14px; color: var(--muted-text); }
+  .hidden { display: none; }
+
+  #fullScreenView {
+    position: fixed;
+    inset: 0;
+    background: var(--page-bg);
+    color: var(--text-color);
+    z-index: 9999;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: auto;
+  }
+
+  #fullScreenOutput {
+    white-space: pre-wrap;
+    font-size: 28px;
+    line-height: 1.5;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    padding: 0;
+    margin-top: 16px;
+    min-height: 0;
+  }
+
+  .nav-bar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .gymtools-link,
+  .back-btn {
+    display: inline-block;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--button-text);
+    background: var(--button-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div id="selectorView">
+  <div class="nav-bar">
+    <a class="gymtools-link" href="https://nitramnoj.github.io/GymTools/">Back to Gym Tools</a>
+  </div>
+  <h2>Kettlebell HIIT Selector</h2>
+
+  <div class="row">
+    <label for="movement">Movement</label>
+    <select id="movement">
+      <option value="hinge">Hinge only</option>
+      <option value="squat">Squat only</option>
+      <option value="combo">Combination only</option>
+      <option value="mixed">Mixed (hinge + squat alternating)</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="load">Load</label>
+    <select id="load">
+      <option value="single">Single</option>
+      <option value="double">Double</option>
+      <option value="mixed">Mixed</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <label for="comboMode">Combination in mixed lists</label>
+    <select id="comboMode">
+      <option value="include">Include</option>
+      <option value="exclude">Exclude</option>
+    </select>
+    <div class="small">Ignored for Hinge only, Squat only, and Combination only.</div>
+  </div>
+
+  <div class="row">
+    <label for="count">Number of exercises</label>
+    <input type="number" id="count" value="6" min="1" step="1">
+  </div>
+
+  <div class="buttons">
+    <button id="generateBtn">Generate</button>
+    <button id="regenerateBtn">Regenerate</button>
+    <button id="fullScreenBtn">Full Screen List</button>
+  </div>
+
+  <pre id="output">Loading exercises...</pre>
+</div>
+
+<div id="fullScreenView" class="hidden">
+  <div class="topbar">
+    <a class="gymtools-link" href="https://nitramnoj.github.io/GymTools/">Back to Gym Tools</a>
+    <button id="backBtn" class="back-btn">Back</button>
+  </div>
+  <pre id="fullScreenOutput"></pre>
+</div>
+
+<script>
+let exerciseData = {
+  single_hinge: [],
+  single_squat: [],
+  single_combo: [],
+  double_hinge: [],
+  double_squat: [],
+  double_combo: []
+};
+
+const outputEl = document.getElementById('output');
+const fullScreenOutputEl = document.getElementById('fullScreenOutput');
+const selectorView = document.getElementById('selectorView');
+const fullScreenView = document.getElementById('fullScreenView');
+
+document.getElementById('generateBtn').addEventListener('click', generate);
+document.getElementById('regenerateBtn').addEventListener('click', generate);
+document.getElementById('fullScreenBtn').addEventListener('click', openFullScreenView);
+document.getElementById('backBtn').addEventListener('click', closeFullScreenView);
+
+fetch('exercises.txt')
+  .then(response => {
+    if (!response.ok) throw new Error('Could not load exercises.txt');
+    return response.text();
+  })
+  .then(text => {
+    exerciseData = parseExercises(text);
+    outputEl.textContent = '';
+    fullScreenOutputEl.textContent = '';
+  })
+  .catch(err => {
+    outputEl.textContent = 'Could not load exercises.txt';
+    console.error(err);
+  });
+
+function parseExercises(text) {
+  const data = {
+    single_hinge: [],
+    single_squat: [],
+    single_combo: [],
+    double_hinge: [],
+    double_squat: [],
+    double_combo: []
+  };
+
+  let currentSection = null;
+  const lines = text.split(/\r?\n/);
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (line.startsWith('//')) continue;
+
+    if (line.startsWith('#')) {
+      const section = line.slice(1).trim().toLowerCase();
+      if (data.hasOwnProperty(section)) {
+        currentSection = section;
+      } else {
+        currentSection = null;
+      }
+      continue;
+    }
+
+    if (!currentSection) continue;
+
+    if (currentSection.endsWith('_combo')) {
+      const parts = line.split('|').map(x => x.trim()).filter(Boolean);
+      const name = parts[0];
+      const family = parts[1] || normaliseFamily(name);
+      data[currentSection].push({ name, family });
+    } else {
+      data[currentSection].push(line);
+    }
+  }
+
+  return data;
+}
+
+function normaliseFamily(name) {
+  return name
+    .toLowerCase()
+    .replace(/^double\s+/, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function shuffle(array) {
+  const arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
+  }
+  return arr;
+}
+
+function sampleUniqueStrings(pool, wanted) {
+  const unique = [...new Set(pool)];
+  return shuffle(unique).slice(0, Math.min(wanted, unique.length));
+}
+
+function buildComboFamilyMap(comboPool) {
+  const familyMap = new Map();
+  for (const item of comboPool) {
+    if (!familyMap.has(item.family)) familyMap.set(item.family, []);
+    familyMap.get(item.family).push(item);
+  }
+  return familyMap;
+}
+
+function sampleComboVariants(comboPool, wanted) {
+  const familyMap = buildComboFamilyMap(comboPool);
+  const families = shuffle([...familyMap.keys()]).slice(0, wanted);
+  const chosen = [];
+  for (const family of families) {
+    const variants = shuffle(familyMap.get(family));
+    chosen.push(variants[0].name);
+  }
+  return chosen;
+}
+
+function getPools(load) {
+  const hinge = [];
+  const squat = [];
+  const combo = [];
+
+  if (load === 'single' || load === 'mixed') {
+    hinge.push(...exerciseData.single_hinge);
+    squat.push(...exerciseData.single_squat);
+    combo.push(...exerciseData.single_combo);
+  }
+  if (load === 'double' || load === 'mixed') {
+    hinge.push(...exerciseData.double_hinge);
+    squat.push(...exerciseData.double_squat);
+    combo.push(...exerciseData.double_combo);
+  }
+
+  return { hinge, squat, combo };
+}
+
+function generateMixedList(count, load, comboMode) {
+  const pools = getPools(load);
+  const hinge = pools.hinge;
+  const squat = pools.squat;
+  const combo = pools.combo;
+
+  const hingeNeeded = Math.ceil(count / 2);
+  const squatSlotNeeded = Math.floor(count / 2);
+
+  const chosenHinges = sampleUniqueStrings(hinge, hingeNeeded);
+
+  let chosenSquatSlots = [];
+  if (comboMode === 'exclude') {
+    chosenSquatSlots = sampleUniqueStrings(squat, squatSlotNeeded);
+  } else {
+    const uniqueSquats = [...new Set(squat)];
+    const comboFamilyCount = buildComboFamilyMap(combo).size;
+    const targetComboCount = Math.min(comboFamilyCount, Math.floor(squatSlotNeeded * 0.25));
+    const squatCount = Math.max(0, squatSlotNeeded - targetComboCount);
+
+    let chosenSquats = sampleUniqueStrings(uniqueSquats, squatCount);
+    let chosenCombos = sampleComboVariants(combo, targetComboCount);
+
+    if (chosenSquats.length + chosenCombos.length < squatSlotNeeded) {
+      const remainingSquats = uniqueSquats.filter(x => !chosenSquats.includes(x));
+      const stillNeeded = squatSlotNeeded - (chosenSquats.length + chosenCombos.length);
+      chosenSquats = chosenSquats.concat(shuffle(remainingSquats).slice(0, stillNeeded));
+    }
+
+    chosenSquatSlots = shuffle(chosenSquats.concat(chosenCombos)).slice(0, squatSlotNeeded);
+  }
+
+  const result = [];
+  let hi = 0;
+  let si = 0;
+
+  for (let i = 0; i < count; i++) {
+    if (i % 2 === 0) {
+      if (hi < chosenHinges.length) result.push(chosenHinges[hi++]);
+    } else {
+      if (si < chosenSquatSlots.length) result.push(chosenSquatSlots[si++]);
+    }
+  }
+
+  return result;
+}
+
+function buildOutputText(result, count) {
+  const lines = [];
+  if (result.length < count) {
+    lines.push('Only ' + result.length + ' available');
+    lines.push('');
+  }
+  result.forEach((exercise, index) => {
+    lines.push((index + 1) + '. ' + exercise);
+  });
+  return lines.join('\n');
+}
+
+function generate() {
+  const movement = document.getElementById('movement').value;
+  const load = document.getElementById('load').value;
+  const comboMode = document.getElementById('comboMode').value;
+  const count = parseInt(document.getElementById('count').value, 10);
+
+  if (!Number.isInteger(count) || count < 1) {
+    outputEl.textContent = 'Enter a valid number';
+    fullScreenOutputEl.textContent = 'Enter a valid number';
+    return;
+  }
+
+  let result = [];
+
+  if (movement === 'hinge') {
+    const pools = getPools(load);
+    result = sampleUniqueStrings(pools.hinge, count);
+  }
+
+  if (movement === 'squat') {
+    const pools = getPools(load);
+    result = sampleUniqueStrings(pools.squat, count);
+  }
+
+  if (movement === 'combo') {
+    const pools = getPools(load);
+    result = sampleComboVariants(pools.combo, count);
+  }
+
+  if (movement === 'mixed') {
+    result = generateMixedList(count, load, comboMode);
+  }
+
+  const text = buildOutputText(result, count);
+  outputEl.textContent = text;
+  fullScreenOutputEl.textContent = text;
+}
+
+function openFullScreenView() {
+  fullScreenOutputEl.textContent = outputEl.textContent;
+  selectorView.classList.add('hidden');
+  fullScreenView.classList.remove('hidden');
+}
+
+function closeFullScreenView() {
+  fullScreenView.classList.add('hidden');
+  selectorView.classList.remove('hidden');
+}
+</script>
+
+</body>
+</html>
