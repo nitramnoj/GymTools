@@ -1,0 +1,10 @@
+{
+  "name": "Gym Timer",
+  "short_name": "Gym Timer",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "description": "Simple gym clock and timer",
+  "icons": []
+}
