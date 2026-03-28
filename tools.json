@@ -6,5 +6,9 @@
   {
     "label": "Exercise Selector",
     "url": "HIIT/"
+  },
+  {
+    "label": "Rest Timer",
+    "url": "resttimer/"
   }
 ]
