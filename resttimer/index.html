@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Set Counter & Rest Timer</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="back-link" href="../index.html">← Back to Gym Tools</a>
+      <h1>Set Counter &amp; Rest Timer</h1>
+      <button id="themeToggle" class="secondary-btn" type="button">Theme</button>
+    </header>
 
+    <main class="layout">
+      <section class="panel builder-panel">
+        <div class="panel-header">
+          <h2>Workout Setup</h2>
+          <button id="resetBuilderBtn" class="secondary-btn" type="button">Clear Workout</button>
+        </div>
+
+        <label class="field">
+          <span>Workout name</span>
+          <input id="workoutName" type="text" maxlength="60" placeholder="Workout A" />
+        </label>
+
+        <form id="blockForm" class="block-form">
+          <div class="form-grid">
+            <label class="field">
+              <span>Block type</span>
+              <select id="blockType">
+                <option value="standard_set">Standard Set</option>
+                <option value="superset">Superset</option>
+                <option value="triset">Triset</option>
+                <option value="circuit">Circuit</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Rounds / sets</span>
+              <input id="blockRounds" type="number" min="1" max="20" value="5" />
+            </label>
+
+            <label class="field">
+              <span>Rest (seconds)</span>
+              <input id="blockRest" type="number" min="0" max="900" value="120" />
+            </label>
+
+            <label class="field" id="stepsFieldWrap">
+              <span>Steps</span>
+              <input id="blockSteps" type="number" min="3" max="6" value="3" />
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-btn" type="submit">Add Block</button>
+          </div>
+        </form>
+
+        <div class="saved-section">
+          <div class="saved-header">
+            <h3>Saved Workouts</h3>
+            <button id="saveWorkoutBtn" class="secondary-btn" type="button">Save Current Workout</button>
+          </div>
+          <div id="savedWorkouts" class="saved-workouts"></div>
+        </div>
+      </section>
+
+      <section class="panel flow-panel">
+        <div class="panel-header">
+          <h2>Current Workout</h2>
+          <div class="flow-actions">
+            <button id="startWorkoutBtn" class="primary-btn" type="button">Start</button>
+            <button id="resetFlowBtn" class="secondary-btn" type="button">Reset</button>
+          </div>
+        </div>
+
+        <div class="status-card">
+          <div class="status-row">
+            <span class="status-label">Workout</span>
+            <strong id="currentWorkoutTitle">Workout A</strong>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Block</span>
+            <strong id="currentBlockLabel">Not started</strong>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Progress</span>
+            <strong id="currentProgressLabel">—</strong>
+          </div>
+          <div class="status-row">
+            <span class="status-label">Step</span>
+            <strong id="currentStepLabel">—</strong>
+          </div>
+        </div>
+
+        <div id="timerCard" class="timer-card idle">
+          <div class="timer-phase" id="timerPhase">Ready</div>
+          <div class="timer-display" id="timerDisplay">00:00</div>
+          <div class="timer-subtext" id="timerSubtext">Build your workout, then press Start.</div>
+        </div>
+
+        <div class="control-row">
+          <button id="prevBtn" class="secondary-btn" type="button">Previous</button>
+          <button id="nextBtn" class="primary-btn" type="button">Complete Step</button>
+          <button id="skipRestBtn" class="secondary-btn" type="button">Skip Rest</button>
+        </div>
+
+        <div id="workoutComplete" class="complete-banner hidden">Workout complete.</div>
+
+        <div class="block-list-wrap">
+          <h3>Blocks</h3>
+          <div id="blockList" class="block-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
