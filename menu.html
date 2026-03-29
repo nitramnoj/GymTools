@@ -19,6 +19,13 @@
       --safe-bottom: max(14px, env(safe-area-inset-bottom));
       --safe-left: max(14px, env(safe-area-inset-left));
     }
+    body.light {
+      --bg: #f3f4f7;
+      --fg: #11151c;
+      --muted: #566171;
+      --btn-bg: #ffffff;
+      --btn-border: #d8dee8;
+    }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0;
@@ -95,10 +102,13 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="title">Gym Tools</div>
-    <button class="small-btn" onclick="window.location.href='index.html'">Back</button>
-  </div>
+ <div class="topbar">
+  <button class="small-btn" onclick="window.location.href='index.html'">Back</button>
+
+  <div class="title">Gym Tools</div>
+
+  <button class="small-btn" id="themeToggle">Toggle Theme</button>
+</div>
 
   <section class="section">
     <h2>Tools</h2>
@@ -113,6 +123,21 @@
   </section>
 
   <script>
+    const THEME_KEY = 'gymToolsTheme';
+
+    function applyTheme() {
+      const theme = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+      document.body.classList.toggle('light', theme === 'light');
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, current === 'dark' ? 'light' : 'dark');
+      applyTheme();
+    });
+
+    applyTheme();
+
     function createButton(label, url) {
       const btn = document.createElement('button');
       btn.className = 'tool-btn';
@@ -153,6 +178,34 @@
         });
       })
       .catch(() => showStatus('combos', 'Failed to load combos.json'));
+  
+    // --- IDLE TIMEOUT (MENU ONLY) ---
+    (function() {
+      const IDLE_TIME = 45000; // 45 seconds
+      let idleTimer = null;
+
+      function resetTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          window.location.href = 'index.html';
+        }, IDLE_TIME);
+      }
+
+      function setupIdleTimer() {
+        const events = ['click','touchstart','keydown','mousemove'];
+        events.forEach(evt => document.addEventListener(evt, resetTimer, { passive: true }));
+        resetTimer();
+      }
+
+      // Start idle timer when page loads
+      setupIdleTimer();
+
+      // Clear timer on unload (safety)
+      window.addEventListener('beforeunload', () => {
+        clearTimeout(idleTimer);
+      });
+    })();
+
   </script>
 </body>
 </html>

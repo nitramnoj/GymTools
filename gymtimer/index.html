@@ -26,6 +26,18 @@
       --safe-bottom: max(14px, env(safe-area-inset-bottom));
       --safe-left: max(14px, env(safe-area-inset-left));
     }
+    body.light {
+      --bg: #f0f2f5;
+      --fg: #111;
+      --muted: #555;
+      --card: #fff;
+      --btn: #e2e5ea;
+      --btn-border: #c0c6d0;
+      --green: #1e8c3a;
+      --red: #b52929;
+      --blue: #1a5fad;
+      --overlay: #f0f2f5;
+    }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       margin: 0;
@@ -120,8 +132,8 @@
     .overlay-card {
       width: min(760px, 100%);
       margin: auto;
-      background: #050505;
-      border: 1px solid #2e2e2e;
+      background: var(--card);
+      border: 1px solid var(--btn-border);
       border-radius: 28px;
       padding: 22px;
       display: flex;
@@ -130,10 +142,20 @@
       max-height: 100%;
       overflow: auto;
     }
+    .overlay-header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+    }
     .overlay-title {
       font-size: clamp(28px, 4vw, 42px);
       font-weight: 700;
       margin: 0;
+      text-align: center;
+    }
+    .overlay-theme-btn {
+      justify-self: end;
     }
     .menu-list, .saved-list {
       display: flex;
@@ -158,7 +180,7 @@
       padding: calc(var(--safe-top) + 84px) clamp(16px, 4vw, 40px) calc(var(--safe-bottom) + 20px);
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 18px;
       text-align: center;
     }
@@ -202,7 +224,7 @@
       min-height: 82px;
       border: 1px solid var(--btn-border);
       border-radius: 18px;
-      background: #090909;
+      background: var(--card);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -233,7 +255,23 @@
       padding: 0 18px;
     }
     .stopwatch-main {
-      padding-top: 64px;
+      flex: 1;
+      padding-top: 0;
+      justify-content: center;
+    }
+    #stopwatchScreen {
+      justify-content: flex-start;
+    }
+    #stopwatchScreen .timer-actions {
+      width: min(560px, 100%);
+      margin-top: 0;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    #stopwatchScreen .action-btn {
+      min-height: 68px;
+      padding: 12px 14px;
+      font-size: clamp(20px, 2.8vw, 28px);
     }
     .timer-value {
       font-size: clamp(92px, 23vw, 240px);
@@ -257,7 +295,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
-      margin-top: 10px;
+      margin-top: 0;
     }
     .timer-actions.secondary {
       grid-template-columns: 1fr 1fr;
@@ -343,11 +381,20 @@
     }
   
     .clock-screen .topbar {
-      justify-content: flex-end;
-      align-items: flex-start;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
     }
     .clock-screen .corner-info {
-      margin-right: auto;
+      display: none;
+    }
+    .clock-screen .menu-row {
+      position: absolute;
+      top: calc(var(--safe-top) + 68px);
+      right: var(--safe-right);
+      z-index: 10;
+      display: flex;
+      justify-content: flex-end;
     }
 </style>
 </head>
@@ -355,8 +402,9 @@
   <section id="clockScreen" class="screen clock-screen">
     <div class="clock-wrap" style="display:none;"><div id="clockTime" class="clock-time">12:00</div></div>
     <div class="topbar">
-      <div class="corner-info"><div id="clockDayDate">Mon 1</div></div>
-      <a href="../" class="small-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Back</a>
+      <a href="../menu.html" class="small-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Back</a>
+    </div>
+    <div class="menu-row">
       <button id="menuButton" class="menu-btn">Menu</button>
     </div>
     
@@ -452,8 +500,6 @@
     </div>
     <div class="timer-actions">
       <button id="stopwatchToggleBtn" class="action-btn">Start</button>
-    </div>
-    <div class="timer-actions secondary" style="grid-template-columns: 1fr;">
       <button id="stopwatchResetBtn" class="action-btn">Reset</button>
     </div>
   </section>
@@ -501,7 +547,11 @@
 
   <div id="menuOverlay" class="overlay">
     <div class="overlay-card">
-      <h2 class="overlay-title">Menu</h2>
+      <div class="overlay-header">
+        <a href="../menu.html" class="small-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Back</a>
+        <h2 class="overlay-title">Gym Timer</h2>
+        <button id="themeToggle" class="small-btn overlay-theme-btn">Theme</button>
+      </div>
       <div class="menu-list">
         <button class="list-btn" data-open="stopwatch">Stopwatch</button>
         <button class="list-btn" data-open="countdown">Countdown</button>
@@ -509,7 +559,6 @@
         <button class="list-btn" data-open="interval">Interval Blocks</button>
         <button class="list-btn" data-open="saved">Saved Sessions</button>
         <button class="list-btn" data-open="repeat">Repeat Last Session</button>
-        <a href="../" class="list-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Back to Gym Tools</a>
       </div>
 
     </div>
@@ -817,30 +866,41 @@
       return { type: 'countdown', totalMs: appState.countdownTime * 1000 };
     }
 
+    function applyInitialTimerVisual(config) {
+      if (config.type === 'hiit') {
+        appState.timerMode = 'hiit';
+        appState.currentRound = 1;
+        appState.phase = 'work';
+        els.timerValue.textContent = formatMs(config.workMs);
+        updateTimerVisual('WORK', appState.currentRound, config.rounds, '--green');
+      } else if (config.type === 'interval') {
+        appState.timerMode = 'interval';
+        appState.currentRound = 1;
+        appState.phase = 'interval';
+        els.timerValue.textContent = formatMs(config.lengthMs);
+        updateTimerVisual('INTERVAL', appState.currentRound, config.rounds, '--blue');
+      } else if (config.type === 'countdown') {
+        appState.timerMode = 'countdown';
+        appState.currentRound = 0;
+        appState.phase = 'countdown';
+        els.timerValue.textContent = formatMs(config.totalMs);
+        updateTimerVisual('COUNTDOWN', 0, 0, '--blue', false);
+      }
+    }
+
     function launchTimer(config) {
       appState.timerConfig = JSON.parse(JSON.stringify(config));
       appState.lastSession = (config.type === 'hiit' || config.type === 'interval') ? JSON.parse(JSON.stringify(config)) : appState.lastSession;
       saveAppMeta();
       setScreen('timer');
+      applyInitialTimerVisual(config);
       startPreCountdown(() => {
         if (config.type === 'hiit') {
-          appState.timerMode = 'hiit';
-          appState.currentRound = 1;
-          appState.phase = 'work';
           beginTimerStep(config.workMs);
-          updateTimerVisual('WORK', appState.currentRound, config.rounds, '#8c1d1d');
         } else if (config.type === 'interval') {
-          appState.timerMode = 'interval';
-          appState.currentRound = 1;
-          appState.phase = 'interval';
           beginTimerStep(config.lengthMs);
-          updateTimerVisual('INTERVAL', appState.currentRound, config.rounds, '#144a8b');
         } else if (config.type === 'countdown') {
-          appState.timerMode = 'countdown';
-          appState.currentRound = 0;
-          appState.phase = 'countdown';
           beginTimerStep(config.totalMs);
-          updateTimerVisual('COUNTDOWN', 0, 0, '#144a8b', false);
         }
       });
     }
@@ -879,7 +939,8 @@
       if (remainingMs > 3100) appState._lastCue = null;
     }
 
-    function updateTimerVisual(label, round, totalRounds, bg, showRounds = true) {
+    function updateTimerVisual(label, round, totalRounds, bgVar, showRounds = true) {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue(bgVar).trim();
       els.screens.timer.style.background = bg;
       document.body.style.background = bg;
       els.timerLabel.textContent = label;
@@ -896,7 +957,7 @@
       if (appState.timerMode === 'hiit') {
         if (appState.phase === 'work') {
           appState.phase = 'rest';
-          updateTimerVisual('REST', appState.currentRound, c.rounds, '#176b2c');
+          updateTimerVisual('REST', appState.currentRound, c.rounds, '--red');
           beginTimerStep(c.restMs);
         } else {
           if (appState.currentRound >= c.rounds) {
@@ -904,7 +965,7 @@
           } else {
             appState.currentRound += 1;
             appState.phase = 'work';
-            updateTimerVisual('WORK', appState.currentRound, c.rounds, '#8c1d1d');
+            updateTimerVisual('WORK', appState.currentRound, c.rounds, '--green');
             beginTimerStep(c.workMs);
           }
         }
@@ -913,7 +974,7 @@
           finishSession();
         } else {
           appState.currentRound += 1;
-          updateTimerVisual('INTERVAL', appState.currentRound, c.rounds, '#144a8b');
+          updateTimerVisual('INTERVAL', appState.currentRound, c.rounds, '--blue');
           beginTimerStep(c.lengthMs);
         }
       } else if (appState.timerMode === 'countdown') {
@@ -974,15 +1035,15 @@
         appState.currentRound = 1;
         appState.phase = 'work';
         els.timerValue.textContent = formatMs(c.workMs);
-        updateTimerVisual('WORK', 1, c.rounds, '#176b2c');
+        updateTimerVisual('WORK', 1, c.rounds, '--red');
       } else if (c.type === 'interval') {
         appState.currentRound = 1;
         appState.phase = 'interval';
         els.timerValue.textContent = formatMs(c.lengthMs);
-        updateTimerVisual('INTERVAL', 1, c.rounds, '#144a8b');
+        updateTimerVisual('INTERVAL', 1, c.rounds, '--blue');
       } else {
         els.timerValue.textContent = formatMs(c.totalMs);
-        updateTimerVisual('COUNTDOWN', 0, 0, '#144a8b', false);
+        updateTimerVisual('COUNTDOWN', 0, 0, '--blue', false);
       }
       els.timerToggleBtn.textContent = 'Start Again';
     }
@@ -994,8 +1055,8 @@
       appState.running = false;
       appState.paused = false;
       releaseWakeLock();
-      els.screens.timer.style.background = '#000';
-      document.body.style.background = '#000';
+      els.screens.timer.style.background = '';
+      document.body.style.background = '';
       if (!keepLast && appState.timerConfig?.type === 'countdown') {
         // leave lastSession untouched
       }
@@ -1012,8 +1073,8 @@
       appState.paused = false;
       appState.stopwatchRunning = false;
       releaseWakeLock();
-      document.body.style.background = '#000';
-      els.screens.timer.style.background = '#000';
+      document.body.style.background = '';
+      els.screens.timer.style.background = '';
       els.stopwatchToggleBtn.textContent = 'Start';
       els.timerToggleBtn.textContent = 'Pause';
       els.countdownOverlay.classList.remove('show');
@@ -1199,6 +1260,17 @@
         if (document.visibilityState === 'visible' && (appState.running || appState.stopwatchRunning)) requestWakeLock();
       });
       ['click','touchstart'].forEach(evt => document.addEventListener(evt, unlockAudio, { once: true }));
+
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const current = localStorage.getItem('gymToolsTheme') === 'light' ? 'light' : 'dark';
+        localStorage.setItem('gymToolsTheme', current === 'dark' ? 'light' : 'dark');
+        applyGymTimerTheme();
+      });
+    }
+
+    function applyGymTimerTheme() {
+      const theme = localStorage.getItem('gymToolsTheme') === 'light' ? 'light' : 'dark';
+      document.body.classList.toggle('light', theme === 'light');
     }
 
     if ('serviceWorker' in navigator) {
@@ -1209,6 +1281,7 @@
 
     updateDateTimeDisplays();
     setInterval(updateDateTimeDisplays, 1000);
+    applyGymTimerTheme();
     wireEvents();
     loadAppMeta();
     renderSavedSessions();

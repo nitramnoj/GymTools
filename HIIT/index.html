@@ -6,7 +6,7 @@
 <title>Kettlebell HIIT Selector</title>
 <style>
   :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --page-bg: #ffffff;
     --text-color: #111111;
     --muted-text: #444444;
@@ -14,6 +14,16 @@
     --border-color: #cccccc;
     --button-bg: #f3f3f3;
     --button-text: #111111;
+  }
+
+  html.dark {
+    --page-bg: #0f1115;
+    --text-color: #f3f5f8;
+    --muted-text: #a9b1bf;
+    --panel-bg: #171a21;
+    --border-color: #2f3747;
+    --button-bg: #1d2230;
+    --button-text: #f3f5f8;
   }
 
   html, body {
@@ -124,18 +134,19 @@
 
 <div id="selectorView">
   <div class="nav-bar">
-    <a class="gymtools-link" href="../">Back to Gym Tools</a>
+    <a class="gymtools-link" href="../menu.html">Back</a>
+    <button class="back-btn" id="themeToggle">Toggle Theme</button>
   </div>
   <h2>Kettlebell HIIT Selector</h2>
 
   <div class="row">
     <label for="movement">Movement</label>
     <select id="movement">
-      <option value="hinge">Hinge only</option>
-      <option value="squat">Squat only</option>
-      <option value="combo">Combination only</option>
-      <option value="mixed">Mixed (hinge + squat alternating)</option>
-    </select>
+  <option value="mixed">Mixed (hinge + squat alternating)</option>
+  <option value="hinge">Hinge only</option>
+  <option value="squat">Squat only</option>
+  <option value="combo">Combination only</option>
+</select>
   </div>
 
   <div class="row">
@@ -172,8 +183,7 @@
 
 <div id="fullScreenView" class="hidden">
   <div class="topbar">
-    <a class="gymtools-link" href="../">Back to Gym Tools</a>
-    <button id="backBtn" class="back-btn">Back</button>
+        <button id="backBtn" class="back-btn">Back</button>
   </div>
   <pre id="fullScreenOutput"></pre>
 </div>
@@ -426,6 +436,23 @@ function closeFullScreenView() {
   fullScreenView.classList.add('hidden');
   selectorView.classList.remove('hidden');
 }
+</script>
+
+<script>
+  const THEME_KEY = 'gymToolsTheme';
+
+  function applyTheme() {
+    const theme = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, current === 'dark' ? 'light' : 'dark');
+    applyTheme();
+  });
+
+  applyTheme();
 </script>
 
 </body>

@@ -2,120 +2,148 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Set Counter & Rest Timer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rest Timer – GymTools</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <a class="back-link" href="../index.html">← Back to Gym Tools</a>
-      <h1>Set Counter &amp; Rest Timer</h1>
-      <button id="themeToggle" class="secondary-btn" type="button">Theme</button>
-    </header>
+    <div class="topbar">
+      <a class="back-link" href="../menu.html">← Back</a>
+      <h1>Rest Timer</h1>
+      <button class="secondary-btn" id="themeToggle" type="button">Toggle Theme</button>
+    </div>
 
-    <main class="layout">
-      <section class="panel builder-panel">
-        <div class="panel-header">
-          <h2>Workout Setup</h2>
-          <button id="resetBuilderBtn" class="secondary-btn" type="button">Clear Workout</button>
-        </div>
-
-        <label class="field">
-          <span>Workout name</span>
-          <input id="workoutName" type="text" maxlength="60" placeholder="Workout A" />
-        </label>
-
-        <form id="blockForm" class="block-form">
-          <div class="form-grid">
-            <label class="field">
-              <span>Block type</span>
-              <select id="blockType">
-                <option value="standard_set">Standard Set</option>
-                <option value="superset">Superset</option>
-                <option value="triset">Triset</option>
-                <option value="circuit">Circuit</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Rounds / sets</span>
-              <input id="blockRounds" type="number" min="1" max="20" value="5" />
-            </label>
-
-            <label class="field">
-              <span>Rest (seconds)</span>
-              <input id="blockRest" type="number" min="0" max="900" value="120" />
-            </label>
-
-            <label class="field" id="stepsFieldWrap">
-              <span>Steps</span>
-              <input id="blockSteps" type="number" min="3" max="6" value="3" />
-            </label>
+    <div class="layout">
+      <div id="builderPanelWrap">
+        <div class="panel">
+          <div class="panel-header">
+            <strong>Workout Builder</strong>
           </div>
 
-          <div class="form-actions">
-            <button class="primary-btn" type="submit">Add Block</button>
-          </div>
-        </form>
+          <div class="block-form">
+            <div class="field" style="margin-bottom: 12px;">
+              <span>Workout name</span>
+              <input id="workoutName" type="text" placeholder="Workout A" maxlength="60" />
+            </div>
 
-        <div class="saved-section">
-          <div class="saved-header">
-            <h3>Saved Workouts</h3>
-            <button id="saveWorkoutBtn" class="secondary-btn" type="button">Save Current Workout</button>
-          </div>
-          <div id="savedWorkouts" class="saved-workouts"></div>
-        </div>
-      </section>
+            <form id="blockForm">
+              <div class="form-grid">
+                <div class="field">
+                  <span>Mode</span>
 
-      <section class="panel flow-panel">
-        <div class="panel-header">
-          <h2>Current Workout</h2>
-          <div class="flow-actions">
-            <button id="startWorkoutBtn" class="primary-btn" type="button">Start</button>
-            <button id="resetFlowBtn" class="secondary-btn" type="button">Reset</button>
+                  <div class="mode-buttons" id="modeButtons">
+                    <button type="button" class="mode-btn active" id="modeQuickRest">Quick Rest</button>
+                    <button type="button" class="mode-btn" id="modeSets">Sets</button>
+                    <button type="button" class="mode-btn" id="modeSetCounter">Set Counter</button>
+                  </div>
+
+                  <select id="blockType" class="hidden" aria-hidden="true" tabindex="-1">
+                    <option value="quick_rest">Quick Rest</option>
+                    <option value="sets">Sets</option>
+                    <option value="set_counter">Set Counter</option>
+                  </select>
+                </div>
+
+                <div class="field" id="roundsFieldWrap">
+                  <span id="roundsLabel">Number of sets</span>
+                  <div class="stepper" data-target="blockRounds" data-step="1" data-min="1" data-max="20">
+                    <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease number of sets">−</button>
+                    <input id="blockRounds" type="text" value="3" inputmode="none" readonly aria-label="Number of sets" />
+                    <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase number of sets">+</button>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <span>Rest (seconds)</span>
+                  <div class="stepper" data-target="blockRest" data-step="5" data-min="0" data-max="900">
+                    <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease rest time">−</button>
+                    <input id="blockRest" type="text" value="60" inputmode="none" readonly aria-label="Rest time in seconds" />
+                    <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase rest time">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 12px;">
+                <button class="primary-btn" id="addBlockBtn" type="submit">Add Block</button>
+                <button class="secondary-btn" id="resetBuilderBtn" type="button">Clear Workout</button>
+              </div>
+            </form>
           </div>
         </div>
 
-        <div class="status-card">
-          <div class="status-row">
-            <span class="status-label">Workout</span>
+        <div class="panel" id="currentBlocksPanel" style="margin-top: 16px;">
+          <div class="panel-header">
+            <strong>Current Blocks</strong>
+          </div>
+          <div class="block-list" id="blockList"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel" id="timerPanelWrap">
+          <div class="panel-header">
             <strong id="currentWorkoutTitle">Workout A</strong>
           </div>
-          <div class="status-row">
-            <span class="status-label">Block</span>
-            <strong id="currentBlockLabel">Not started</strong>
+
+          <div class="status-card">
+            <div class="status-row">
+              <div class="status-label">Current block</div>
+              <div id="currentBlockLabel">Not started</div>
+            </div>
+            <div class="status-row">
+              <div class="status-label">Progress</div>
+              <div id="currentProgressLabel">—</div>
+            </div>
+            <div class="status-row">
+              <div class="status-label">Current step</div>
+              <div id="currentStepLabel">—</div>
+            </div>
           </div>
-          <div class="status-row">
-            <span class="status-label">Progress</span>
-            <strong id="currentProgressLabel">—</strong>
+
+          <div class="timer-card idle" id="timerCard">
+            <div class="timer-phase" id="timerPhase">Ready</div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="timer-subtext" id="timerSubtext">Build your workout, then press Start.</div>
           </div>
-          <div class="status-row">
-            <span class="status-label">Step</span>
-            <strong id="currentStepLabel">—</strong>
+
+          <div class="complete-banner hidden" id="workoutComplete">Workout complete.</div>
+
+          <div class="control-row" style="margin-bottom: 10px;">
+            <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
+            <button class="secondary-btn" id="resetFlowBtn" type="button">Reset Flow</button>
+            <button class="secondary-btn" id="saveWorkoutBtn" type="button">Save Workout</button>
           </div>
         </div>
 
-        <div id="timerCard" class="timer-card idle">
-          <div class="timer-phase" id="timerPhase">Ready</div>
-          <div class="timer-display" id="timerDisplay">00:00</div>
-          <div class="timer-subtext" id="timerSubtext">Build your workout, then press Start.</div>
+        <div class="panel hidden" id="setCounterPanel">
+          <div class="panel-header">
+            <strong>Set Counter</strong>
+          </div>
+
+          <div class="set-counter-card">
+            <div class="set-counter-label">Current Set</div>
+            <div class="set-counter-number" id="setCounterNumber">1</div>
+          </div>
+
+          <div class="set-counter-actions">
+            <button class="primary-btn set-counter-next" id="setCounterNextBtn" type="button">Next Set</button>
+          </div>
+
+          <div class="set-counter-secondary-actions">
+            <button class="secondary-btn" id="setCounterResetBtn" type="button">Reset</button>
+            <button class="secondary-btn" id="setCounterExitBtn" type="button">Exit</button>
+          </div>
         </div>
 
-        <div class="control-row">
-          <button id="prevBtn" class="secondary-btn" type="button">Previous</button>
-          <button id="nextBtn" class="primary-btn" type="button">Complete Step</button>
-          <button id="skipRestBtn" class="secondary-btn" type="button">Skip Rest</button>
+        <div class="panel saved-section" id="savedWorkoutsPanel" style="margin-top: 16px;">
+          <div class="saved-header">
+            <strong>Saved Workouts</strong>
+          </div>
+          <div class="saved-workouts" id="savedWorkouts"></div>
         </div>
-
-        <div id="workoutComplete" class="complete-banner hidden">Workout complete.</div>
-
-        <div class="block-list-wrap">
-          <h3>Blocks</h3>
-          <div id="blockList" class="block-list"></div>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
   </div>
 
   <script src="script.js"></script>

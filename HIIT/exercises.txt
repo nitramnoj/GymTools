@@ -1,25 +1,29 @@
 # single_hinge
-Swings
-Snatch
-Clean
+Single KB Two hand swing | swing
+Single KB One hand swing | swing
+Single KB Hand to hand swing | swing
+Single KB Clean | clean
+Single KB Dead stop clean | clean
+Single KB Snatch | snatch
+Single KB Dead stop snatch | snatch
+Figure 8 | figure8
 
 # single_squat
-Goblet squat
-Reverse lunge
-Split squat
-
-# single_combo
-Clean and squat | clean_squat
-Clean and reverse lunge | clean_lunge
+Single KB Goblet squat | squat
+Single KB Racked squat | squat
+Single KB Reverse lunge (racked) | lunge
+Single KB Reverse lunge (goblet) | lunge
+Single KB Weighted step up (goblet) | step_up
+Single KB Weighted step up (racked) | step_up
 
 # double_hinge
-Double swings
-Double clean
+Double Kettlbell clean | clean
+Double Kettlbell dead stop clean | clean
+Double Kettlbell swing to clean | clean
+Double Kettlbell suitcase deadlift | deadlift
 
 # double_squat
-Double front squat
-Double reverse lunge
-
-# double_combo
-Double clean and squat | clean_squat
-Double clean and reverse lunge | clean_lunge
+Double Kettlbell front squat | squat
+Double Kettlbell squat clean | clean_squat
+Double Kettlbell reverse lunge | lunge
+Double Kettlbell rack step ups | step_up
