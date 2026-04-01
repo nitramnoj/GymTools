@@ -179,3 +179,24 @@ button {
   .form-grid { grid-template-columns: 1fr; }
   .topbar { align-items: stretch; }
 }
+
+
+
+
+.clock-field {
+  margin-top: 18px;
+}
+
+.gym-clock {
+  display: block;
+  width: 100%;
+  font-size: 3.5rem;
+  font-weight: 700;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  letter-spacing: 1px;
+  line-height: 1.1;
+}

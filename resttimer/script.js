@@ -1042,3 +1042,20 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+function startClock() {
+  const clockEl = document.getElementById('gymClock');
+  if (!clockEl) return;
+
+  function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    clockEl.textContent = `${hours}:${minutes}`;
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+startClock();
