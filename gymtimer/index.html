@@ -77,12 +77,14 @@
       z-index: 10;
     }
     .corner-info {
-      font-size: clamp(16px, 2vw, 22px);
+      font-size: clamp(48px, 6vw, 72px);
       color: var(--muted);
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      line-height: 1.05;
+      gap: 0;
+      line-height: 1;
+      z-index: 10;
+      pointer-events: none;
     }
     .menu-btn, .small-btn, .action-btn, .list-btn, .pm-btn {
       border: 1px solid var(--btn-border);
@@ -396,6 +398,14 @@
       display: flex;
       justify-content: flex-end;
     }
+    .setup-screen .corner-info,
+    .timer-screen .corner-info,
+    .saved-screen .corner-info,
+    .complete-screen .corner-info {
+      position: fixed;
+      left: var(--safe-left);
+      bottom: var(--safe-bottom);
+    }
 </style>
 </head>
 <body>
@@ -651,7 +661,7 @@
       if (els.clockTime) els.clockTime.textContent = time;
       if (els.clockDayDate) els.clockDayDate.textContent = dayDate;
       document.querySelectorAll('.corner-info > div').forEach(el => {
-        if (el.id !== 'clockDayDate') el.textContent = `${dayDate} • ${time}`;
+        if (el.id !== 'clockDayDate') el.textContent = time;
       });
     }
 
