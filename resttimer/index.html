@@ -5,149 +5,302 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rest Timer – GymTools</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .quick-setup-panel {
+      min-height: min(72vh, 680px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .quick-setup-shell,
+    .quick-timer-shell {
+      width: min(100%, 760px);
+      margin: 0 auto;
+    }
+
+    .quick-preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .quick-preset-btn {
+      min-height: 84px;
+      font-size: clamp(28px, 4.2vw, 40px);
+      font-weight: 700;
+    }
+
+    .quick-selected-readout {
+      text-align: center;
+      margin-top: 18px;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 700;
+      opacity: 0.95;
+    }
+
+    .quick-timer-shell {
+      min-height: min(74vh, 760px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 18px;
+    }
+
+    .quick-timer-main {
+      font-size: clamp(88px, 20vw, 220px);
+      line-height: 0.92;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .quick-timer-sets {
+      font-size: clamp(28px, 5vw, 54px);
+      line-height: 1;
+      font-weight: 700;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .quick-timer-controls,
+    .quick-setup-controls {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .quick-timer-controls button,
+    .quick-setup-controls button {
+      min-width: 160px;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 640px) {
+      .quick-preset-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .quick-preset-btn {
+        min-height: 74px;
+      }
+
+      .quick-timer-controls button,
+      .quick-setup-controls button {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 0;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell">
     <div class="topbar">
-      <a class="back-link" href="../menu.html">← Back</a>
-      <h1>Rest Timer</h1>
-      <button class="secondary-btn" id="themeToggle" type="button">Toggle Theme</button>
+      <a class="back-link" id="backButton" href="../menu.html">Back</a>
+      <h1 id="screenTitle">Rest Timer</h1>
+      <button class="secondary-btn" id="themeToggle" type="button">Theme</button>
     </div>
 
-    <div class="layout">
-      <div id="builderPanelWrap">
-        <div class="panel">
+    <div class="utility-clock-wrap">
+      <div id="utilityClock" class="utility-clock" aria-hidden="true">00:00</div>
+    </div>
+
+    <section class="screen" id="screenMenu">
+      <div class="screen-shell narrow-shell">
+        <div class="panel menu-panel">
           <div class="panel-header">
-            <strong>Workout Builder</strong>
+            <strong>Choose Mode</strong>
           </div>
-
-          <div class="block-form">
-            <div class="field" style="margin-bottom: 12px;">
-              <span>Workout name</span>
-              <input id="workoutName" type="text" placeholder="Workout A" maxlength="60" />
-            </div>
-
-            <form id="blockForm">
-              <div class="form-grid">
-                <div class="field">
-                  <span>Mode</span>
-
-                  <div class="mode-buttons" id="modeButtons">
-                    <button type="button" class="mode-btn active" id="modeQuickRest">Quick Rest</button>
-                    <button type="button" class="mode-btn" id="modeSets">Sets</button>
-                    <button type="button" class="mode-btn" id="modeSetCounter">Set Counter</button>
-                  </div>
-
-                  <select id="blockType" class="hidden" aria-hidden="true" tabindex="-1">
-                    <option value="quick_rest">Quick Rest</option>
-                    <option value="sets">Sets</option>
-                    <option value="set_counter">Set Counter</option>
-                  </select>
-                </div>
-
-                <div class="field" id="roundsFieldWrap">
-                  <span id="roundsLabel">Number of sets</span>
-                  <div class="stepper" data-target="blockRounds" data-step="1" data-min="1" data-max="20">
-                    <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease number of sets">−</button>
-                    <input id="blockRounds" type="text" value="3" inputmode="none" readonly aria-label="Number of sets" />
-                    <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase number of sets">+</button>
-                  </div>
-                </div>
-
-                <div class="field">
-                  <span>Rest (seconds)</span>
-                  <div class="stepper" data-target="blockRest" data-step="5" data-min="0" data-max="900">
-                    <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease rest time">−</button>
-                    <input id="blockRest" type="text" value="60" inputmode="none" readonly aria-label="Rest time in seconds" />
-                    <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase rest time">+</button>
-                  </div>
-                </div>
-              </div>
-<div class="form-actions" style="margin-top: 12px;">
-                <button class="primary-btn" id="addBlockBtn" type="submit">Add Block</button>
-                <button class="secondary-btn" id="resetBuilderBtn" type="button">Clear Workout</button>
-              </div>
-
-              <div class="field clock-field">
-                <span>Time</span>
-                <div id="gymClock" class="gym-clock">00:00</div>
-              </div>
-            </form>
+          <div class="menu-buttons">
+            <button class="menu-btn primary-btn" id="goQuickStart" type="button">Quick Start</button>
+            <button class="menu-btn secondary-btn" id="goSetCounter" type="button">Set Counter</button>
+            <button class="menu-btn secondary-btn" id="goFullWorkout" type="button">Full Workout</button>
           </div>
-        </div>
-
-        <div class="panel" id="currentBlocksPanel" style="margin-top: 16px;">
-          <div class="panel-header">
-            <strong>Current Blocks</strong>
-          </div>
-          <div class="block-list" id="blockList"></div>
         </div>
       </div>
+    </section>
 
-      <div>
-        <div class="panel" id="timerPanelWrap">
+    <section class="screen hidden" id="screenQuickSetup">
+      <div class="screen-shell quick-setup-shell">
+        <div class="panel quick-setup-panel">
           <div class="panel-header">
-            <strong id="currentWorkoutTitle">Workout A</strong>
+            <strong>Quick Start</strong>
           </div>
 
-          <div class="status-card">
-            <div class="status-row">
-              <div class="status-label">Current block</div>
-              <div id="currentBlockLabel">Not started</div>
+          <input id="quickRestSeconds" type="hidden" value="60" aria-hidden="true" />
+
+          <div class="field">
+            <span>Rest time</span>
+            <div class="quick-preset-grid" role="group" aria-label="Quick Start rest time presets">
+              <button class="quick-preset-btn secondary-btn" type="button" data-quick-preset="30">30s</button>
+              <button class="quick-preset-btn secondary-btn" type="button" data-quick-preset="45">45s</button>
+              <button class="quick-preset-btn primary-btn" type="button" data-quick-preset="60">60s</button>
+              <button class="quick-preset-btn secondary-btn" type="button" data-quick-preset="90">90s</button>
+              <button class="quick-preset-btn secondary-btn" type="button" data-quick-preset="120">120s</button>
+              <button class="quick-preset-btn secondary-btn" type="button" data-quick-preset="180">180s</button>
             </div>
-            <div class="status-row">
-              <div class="status-label">Progress</div>
-              <div id="currentProgressLabel">—</div>
-            </div>
-            <div class="status-row">
-              <div class="status-label">Current step</div>
-              <div id="currentStepLabel">—</div>
-            </div>
+            <div class="quick-selected-readout" id="quickSetupSelectedLabel">60s</div>
           </div>
 
-          <div class="timer-card idle" id="timerCard">
-            <div class="timer-phase" id="timerPhase">Ready</div>
-            <div class="timer-display" id="timerDisplay">00:00</div>
-            <div class="timer-subtext" id="timerSubtext">Build your workout, then press Start.</div>
-          </div>
-
-          <div class="complete-banner hidden" id="workoutComplete">Workout complete.</div>
-
-          <div class="control-row" style="margin-bottom: 10px;">
-            <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
-            <button class="secondary-btn" id="resetFlowBtn" type="button">Reset</button>
-            <button class="secondary-btn" id="saveWorkoutBtn" type="button">Save Workout</button>
+          <div class="quick-setup-controls top-gap">
+            <button class="primary-btn" id="quickSetupStartBtn" type="button">Start</button>
+            <button class="secondary-btn" id="quickSetupResetBtn" type="button">Reset</button>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="panel hidden" id="setCounterPanel">
+    <section class="screen hidden" id="screenQuickTimer">
+      <div class="screen-shell quick-timer-shell" id="quickTimerCard">
+        <div class="visually-hidden" id="quickPresetLabel">01:00</div>
+        <div class="visually-hidden" id="quickStepLabel">Ready</div>
+        <div class="visually-hidden" id="quickTimerPhase">Ready</div>
+        <div class="visually-hidden" id="quickTimerSubtext"></div>
+
+        <div class="quick-timer-main" id="quickTimerDisplay">01:00</div>
+        <div class="quick-timer-sets" id="quickSetsLabel">0 Sets</div>
+
+        <div class="quick-timer-controls">
+          <button class="primary-btn" id="quickRestBtn" type="button">Start</button>
+          <button class="secondary-btn" id="quickResetBtn" type="button">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen hidden" id="screenSetCounter">
+      <div class="screen-shell narrow-shell">
+        <div class="panel">
           <div class="panel-header">
             <strong>Set Counter</strong>
           </div>
 
           <div class="set-counter-card">
-            <div class="set-counter-label">Current Set</div>
-            <div class="set-counter-number" id="setCounterNumber">1</div>
+            <div class="set-counter-number" id="setCounterValue">0</div>
+            <div class="set-counter-text" id="setCounterText">0 SETS</div>
           </div>
 
-          <div class="set-counter-actions">
-            <button class="primary-btn set-counter-next" id="setCounterNextBtn" type="button">Next Set</button>
-          </div>
-
-          <div class="set-counter-secondary-actions">
+          <div class="control-row">
+            <button class="primary-btn" id="setCounterNextBtn" type="button">Next</button>
             <button class="secondary-btn" id="setCounterResetBtn" type="button">Reset</button>
-            <button class="secondary-btn" id="setCounterExitBtn" type="button">Exit</button>
           </div>
-        </div>
-
-        <div class="panel saved-section" id="savedWorkoutsPanel" style="margin-top: 16px;">
-          <div class="saved-header">
-            <strong>Saved Workouts</strong>
-          </div>
-          <div class="saved-workouts" id="savedWorkouts"></div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <section class="screen hidden" id="screenFullWorkout">
+      <div class="screen-shell full-shell">
+        <div class="layout">
+          <div>
+            <div class="panel">
+              <div class="panel-header">
+                <strong>Workout Builder</strong>
+              </div>
+
+              <div class="block-form">
+                <div class="field" style="margin-bottom: 12px;">
+                  <span>Workout name</span>
+                  <input id="workoutName" type="text" placeholder="Workout A" maxlength="60" />
+                </div>
+
+                <form id="blockForm">
+                  <div class="form-grid">
+                    <div class="field" id="roundsFieldWrap">
+                      <span id="roundsLabel">Number of sets</span>
+                      <div class="stepper" data-target="blockRounds" data-step="1" data-min="1" data-max="20">
+                        <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease number of sets">−</button>
+                        <input id="blockRounds" type="text" value="3" inputmode="none" readonly aria-label="Number of sets" />
+                        <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase number of sets">+</button>
+                      </div>
+                    </div>
+
+                    <div class="field">
+                      <span>Rest (seconds)</span>
+                      <div class="stepper" data-target="blockRest" data-step="5" data-min="0" data-max="900">
+                        <button class="stepper-btn" type="button" data-stepper-action="decrement" aria-label="Decrease rest time">−</button>
+                        <input id="blockRest" type="text" value="60" inputmode="none" readonly aria-label="Rest time in seconds" />
+                        <button class="stepper-btn" type="button" data-stepper-action="increment" aria-label="Increase rest time">+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-actions top-gap">
+                    <button class="primary-btn" id="addBlockBtn" type="submit">Add Block</button>
+                    <button class="secondary-btn" id="resetBuilderBtn" type="button">Clear Workout</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel top-gap" id="currentBlocksPanel">
+              <div class="panel-header">
+                <strong>Current Blocks</strong>
+              </div>
+              <div class="block-list" id="blockList"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel" id="timerPanelWrap">
+              <div class="panel-header">
+                <strong id="currentWorkoutTitle">Workout A</strong>
+              </div>
+
+              <div class="status-card">
+                <div class="status-row">
+                  <div class="status-label">Current block</div>
+                  <div id="currentBlockLabel">Not started</div>
+                </div>
+                <div class="status-row">
+                  <div class="status-label">Progress</div>
+                  <div id="currentProgressLabel">—</div>
+                </div>
+                <div class="status-row">
+                  <div class="status-label">Current step</div>
+                  <div id="currentStepLabel">—</div>
+                </div>
+              </div>
+
+              <div class="timer-card idle" id="timerCard">
+                <div class="timer-phase" id="timerPhase">Ready</div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="timer-subtext" id="timerSubtext">Build your workout, then press Start.</div>
+              </div>
+
+              <div class="complete-banner hidden" id="workoutComplete">Workout complete.</div>
+
+              <div class="control-row">
+                <button class="primary-btn" id="startWorkoutBtn" type="button">Start</button>
+                <button class="secondary-btn" id="resetFlowBtn" type="button">Reset</button>
+                <button class="secondary-btn" id="saveWorkoutBtn" type="button">Save Workout</button>
+              </div>
+            </div>
+
+            <div class="panel saved-section top-gap" id="savedWorkoutsPanel">
+              <div class="saved-header">
+                <strong>Saved Workouts</strong>
+              </div>
+              <div class="saved-workouts" id="savedWorkouts"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script src="script.js"></script>

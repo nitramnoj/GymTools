@@ -7,7 +7,6 @@
   --border: #2f3747;
   --accent: #f3f5f8;
   --accent-text: #0f1115;
-  --danger: #a44;
   --success: #295f39;
   --idle: #2a3140;
   --rest: #7a5b12;
@@ -23,7 +22,6 @@ body.light {
   --border: #d8dee8;
   --accent: #11151c;
   --accent-text: #ffffff;
-  --danger: #c95a5a;
   --success: #4ea66b;
   --idle: #e8edf5;
   --rest: #f1d48d;
@@ -31,6 +29,7 @@ body.light {
 }
 
 * { box-sizing: border-box; }
+html, body { min-height: 100%; }
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
@@ -38,16 +37,36 @@ body {
   color: var(--text);
 }
 
-.app-shell { max-width: 1280px; margin: 0 auto; padding: 16px; }
+.app-shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 92px 16px 118px;
+}
+
 .topbar {
-  display: flex;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+  z-index: 20;
+  pointer-events: none;
 }
-.topbar h1 { margin: 0; font-size: 1.5rem; }
+.topbar > * { pointer-events: auto; }
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  text-align: center;
+}
+
+.back-link,
+button {
+  font: inherit;
+}
+
 .back-link {
   color: var(--text);
   text-decoration: none;
@@ -55,7 +74,40 @@ body {
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--panel);
+  min-width: 104px;
+  text-align: center;
 }
+
+.utility-clock-wrap {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 20;
+  pointer-events: none;
+}
+.utility-clock {
+  font-size: clamp(44px, 5vw, 58px);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 6px 10px 4px 0;
+}
+
+.screen-shell {
+  width: 100%;
+}
+.narrow-shell {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.full-shell {
+  max-width: 100%;
+}
+.hidden { display: none !important; }
+.top-gap { margin-top: 16px; }
+
 .layout {
   display: grid;
   grid-template-columns: minmax(320px, 420px) minmax(320px, 1fr);
@@ -67,19 +119,26 @@ body {
   border-radius: 16px;
   padding: 16px;
 }
-.panel-header, .saved-header {
+.panel-header,
+.saved-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field span { color: var(--muted); font-size: 0.95rem; }
-input, select, button {
-  font: inherit;
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-input, select {
+.field span,
+.status-label,
+.timer-phase,
+.set-counter-text {
+  color: var(--muted);
+}
+input {
   width: 100%;
   background: var(--panel-2);
   color: var(--text);
@@ -102,25 +161,54 @@ button {
   background: var(--panel-2);
   color: var(--text);
 }
+.menu-panel {
+  padding: 20px;
+}
+.menu-buttons {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.menu-btn {
+  min-height: 72px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.form-actions, .control-row, .flow-actions {
+.form-actions,
+.control-row {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
-.block-form, .saved-section { margin-top: 14px; }
-.status-card, .timer-card, .block-item, .saved-item {
+.block-form,
+.saved-section {
+  margin-top: 14px;
+}
+.status-card,
+.timer-card,
+.block-item,
+.saved-item,
+.set-counter-card {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel-2);
 }
-.status-card { padding: 14px; display: grid; gap: 10px; margin-bottom: 14px; }
-.status-row { display: flex; justify-content: space-between; gap: 10px; }
-.status-label { color: var(--muted); }
+.status-card {
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
 .timer-card {
   padding: 20px;
   text-align: center;
@@ -129,16 +217,39 @@ button {
 }
 .timer-card.resting { background: var(--rest); }
 .timer-card.active { background: var(--active); }
-.timer-phase { font-size: 1rem; color: var(--muted); margin-bottom: 8px; }
-.timer-display { font-size: clamp(2.3rem, 7vw, 4.2rem); font-weight: 700; }
+.timer-display {
+  font-size: clamp(2.6rem, 8vw, 5rem);
+  font-weight: 700;
+}
 .timer-subtext { margin-top: 8px; }
-.block-list, .saved-workouts { display: grid; gap: 10px; }
-.block-item, .saved-item { padding: 14px; }
-.block-item.active-block { outline: 2px solid var(--text); }
-.block-title { font-weight: 700; margin-bottom: 6px; }
-.block-meta, .saved-meta { color: var(--muted); font-size: 0.95rem; }
-.block-item-actions, .saved-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.hidden { display: none !important; }
+.block-list,
+.saved-workouts {
+  display: grid;
+  gap: 10px;
+}
+.block-item,
+.saved-item {
+  padding: 14px;
+}
+.block-item.active-block {
+  outline: 2px solid var(--text);
+}
+.block-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.block-meta,
+.saved-meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.block-item-actions,
+.saved-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
 .complete-banner {
   margin: 12px 0 16px;
   padding: 14px;
@@ -167,8 +278,22 @@ button {
   line-height: 1;
   min-height: 48px;
 }
-.stepper-btn:active {
-  transform: translateY(1px);
+.stepper-btn:active { transform: translateY(1px); }
+.set-counter-card {
+  padding: 28px 20px;
+  text-align: center;
+  margin: 8px 0 16px;
+  background: var(--active);
+}
+.set-counter-number {
+  font-size: clamp(4rem, 18vw, 8rem);
+  font-weight: 700;
+  line-height: 1;
+}
+.set-counter-text {
+  margin-top: 10px;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  letter-spacing: 0.08em;
 }
 
 @media (max-width: 900px) {
@@ -177,26 +302,24 @@ button {
 
 @media (max-width: 640px) {
   .form-grid { grid-template-columns: 1fr; }
-  .topbar { align-items: stretch; }
-}
-
-
-
-
-.clock-field {
-  margin-top: 18px;
-}
-
-.gym-clock {
-  display: block;
-  width: 100%;
-  font-size: 3.5rem;
-  font-weight: 700;
-  text-align: left;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: var(--panel-2);
-  border: 1px solid var(--border);
-  letter-spacing: 1px;
-  line-height: 1.1;
+  .app-shell {
+    padding-top: 84px;
+    padding-bottom: 110px;
+  }
+  .topbar {
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+  }
+  .back-link,
+  .secondary-btn,
+  .primary-btn {
+    min-width: 88px;
+    padding: 10px 12px;
+  }
+  .utility-clock {
+    font-size: clamp(40px, 11vw, 52px);
+  }
+  .menu-btn {
+    min-height: 64px;
+  }
 }

@@ -4,153 +4,172 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kettlebell HIIT Selector</title>
+
 <style>
-  :root {
-    color-scheme: light dark;
-    --page-bg: #ffffff;
-    --text-color: #111111;
-    --muted-text: #444444;
-    --panel-bg: #ffffff;
-    --border-color: #cccccc;
-    --button-bg: #f3f3f3;
-    --button-text: #111111;
-  }
+:root {
+  color-scheme: light dark;
+  --page-bg: #ffffff;
+  --text-color: #111111;
+  --muted-text: #444444;
+  --panel-bg: #ffffff;
+  --border-color: #cccccc;
+  --button-bg: #f3f3f3;
+  --button-text: #111111;
+}
 
-  html.dark {
-    --page-bg: #0f1115;
-    --text-color: #f3f5f8;
-    --muted-text: #a9b1bf;
-    --panel-bg: #171a21;
-    --border-color: #2f3747;
-    --button-bg: #1d2230;
-    --button-text: #f3f5f8;
-  }
+html.dark {
+  --page-bg: #0f1115;
+  --text-color: #f3f5f8;
+  --muted-text: #a9b1bf;
+  --panel-bg: #171a21;
+  --border-color: #2f3747;
+  --button-bg: #1d2230;
+  --button-text: #f3f5f8;
+}
 
-  html, body {
-    background: var(--page-bg);
-    color: var(--text-color);
-  }
+html, body {
+  background: var(--page-bg);
+  color: var(--text-color);
+}
 
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 760px;
-    margin: 24px auto;
-    padding: 0 16px;
-    line-height: 1.4;
-  }
+body {
+  font-family: Arial, sans-serif;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 88px 16px 120px;
+  line-height: 1.4;
+  position: relative;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
 
-  h2 { margin: 0 0 16px; color: var(--text-color); }
-  .row { margin: 0 0 14px; }
-  label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--text-color); }
+h2 { margin: 0 0 16px; }
+.row { margin: 0 0 14px; }
 
-  select,
-  input,
-  button {
-    font-size: 16px;
-    padding: 8px;
-    color: var(--button-text);
-    background: var(--button-bg);
-    border: 1px solid var(--border-color);
-  }
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
 
-  select,
-  input[type="number"] {
-    width: 100%;
-    max-width: 360px;
-    background: var(--panel-bg);
-    color: var(--text-color);
-  }
+select, input, button {
+  font-size: 16px;
+  padding: 8px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-color);
+}
 
-  .buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-  button { cursor: pointer; }
-  a { color: var(--text-color); }
+select, input[type="number"] {
+  width: 100%;
+  max-width: 360px;
+  background: var(--panel-bg);
+  color: var(--text-color);
+}
 
-  pre {
-    white-space: pre-wrap;
-    border: 1px solid var(--border-color);
-    background: var(--panel-bg);
-    color: var(--text-color);
-    padding: 12px;
-    min-height: 180px;
-    margin-top: 18px;
-    font-size: 18px;
-  }
+.buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
 
-  .small { font-size: 14px; color: var(--muted-text); }
-  .hidden { display: none; }
+button { cursor: pointer; }
 
-  #fullScreenView {
-    position: fixed;
-    inset: 0;
-    background: var(--page-bg);
-    color: var(--text-color);
-    z-index: 9999;
-    padding: 16px;
-    box-sizing: border-box;
-    overflow: auto;
-  }
+pre {
+  white-space: pre-wrap;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  padding: 12px;
+  min-height: 180px;
+  margin-top: 18px;
+  font-size: 18px;
+}
 
-  #fullScreenOutput {
-    white-space: pre-wrap;
-    font-size: 28px;
-    line-height: 1.5;
-    border: none;
-    background: transparent;
-    color: var(--text-color);
-    padding: 0;
-    margin-top: 16px;
-    min-height: 0;
-  }
+.hidden { display: none; }
 
-  .nav-bar {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
+.nav-bar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 20;
+  pointer-events: none;
+}
 
-  .gymtools-link,
-  .back-btn {
-    display: inline-block;
-    font-size: 14px;
-    padding: 8px 12px;
-    text-decoration: none;
-    color: var(--button-text);
-    background: var(--button-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-  }
+.gymtools-link,
+.back-btn {
+  font-size: 14px;
+  padding: 10px 14px;
+  background: var(--button-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  pointer-events: auto;
+  color: var(--button-text);
+  text-decoration: none;
+}
 
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
+.utility-clock {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10000;
+  font-size: clamp(44px, 5vw, 58px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--muted-text);
+  background: var(--page-bg);
+  padding: 6px 10px 6px 0;
+  pointer-events: none;
+}
+
+#fullScreenView {
+  position: fixed;
+  inset: 0;
+  background: var(--page-bg);
+  z-index: 9999;
+  padding: 16px 16px 120px;
+  overflow: auto;
+}
+
+#fullScreenOutput {
+  font-size: 28px;
+  line-height: 1.5;
+  margin-top: 16px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
 </style>
 </head>
+
 <body>
 
 <div id="selectorView">
   <div class="nav-bar">
     <a class="gymtools-link" href="../menu.html">Back</a>
-    <button class="back-btn" id="themeToggle">Toggle Theme</button>
+    <button class="back-btn" id="themeToggle">Theme</button>
   </div>
+
   <h2>Kettlebell HIIT Selector</h2>
 
   <div class="row">
-    <label for="movement">Movement</label>
+    <label>Movement</label>
     <select id="movement">
-  <option value="mixed">Mixed (hinge + squat alternating)</option>
-  <option value="hinge">Hinge only</option>
-  <option value="squat">Squat only</option>
-  <option value="combo">Combination only</option>
-</select>
+      <option value="mixed">Mixed</option>
+      <option value="hinge">Hinge</option>
+      <option value="squat">Squat</option>
+      <option value="combo">Combination</option>
+    </select>
   </div>
 
   <div class="row">
-    <label for="load">Load</label>
+    <label>Load</label>
     <select id="load">
       <option value="single">Single</option>
       <option value="double">Double</option>
@@ -159,300 +178,249 @@
   </div>
 
   <div class="row">
-    <label for="comboMode">Combination in mixed lists</label>
-    <select id="comboMode">
-      <option value="include">Include</option>
-      <option value="exclude">Exclude</option>
-    </select>
-    <div class="small">Ignored for Hinge only, Squat only, and Combination only.</div>
-  </div>
-
-  <div class="row">
-    <label for="count">Number of exercises</label>
-    <input type="number" id="count" value="6" min="1" step="1">
+    <label>Intervals</label>
+    <input type="number" id="count" value="6" min="1">
   </div>
 
   <div class="buttons">
     <button id="generateBtn">Generate</button>
-    <button id="regenerateBtn">Regenerate</button>
-    <button id="fullScreenBtn">Full Screen List</button>
+    <button id="fullScreenBtn">Full Screen</button>
   </div>
 
-  <pre id="output">Loading exercises...</pre>
+  <pre id="output">Press Generate</pre>
 </div>
 
 <div id="fullScreenView" class="hidden">
   <div class="topbar">
-        <button id="backBtn" class="back-btn">Back</button>
+    <button id="backBtn" class="back-btn">Back</button>
+    <button class="back-btn" id="themeToggleFull">Theme</button>
   </div>
   <pre id="fullScreenOutput"></pre>
+  <div id="fullScreenClock" class="utility-clock">00:00</div>
 </div>
 
+<div id="utilityClock" class="utility-clock">00:00</div>
+
 <script>
-let exerciseData = {
-  single_hinge: [],
-  single_squat: [],
-  single_combo: [],
-  double_hinge: [],
-  double_squat: [],
-  double_combo: []
-};
+const output = document.getElementById('output');
+const full = document.getElementById('fullScreenOutput');
+const selector = document.getElementById('selectorView');
+const fullscreen = document.getElementById('fullScreenView');
 
-const outputEl = document.getElementById('output');
-const fullScreenOutputEl = document.getElementById('fullScreenOutput');
-const selectorView = document.getElementById('selectorView');
-const fullScreenView = document.getElementById('fullScreenView');
+let allExercises = [];
 
-document.getElementById('generateBtn').addEventListener('click', generate);
-document.getElementById('regenerateBtn').addEventListener('click', generate);
-document.getElementById('fullScreenBtn').addEventListener('click', openFullScreenView);
-document.getElementById('backBtn').addEventListener('click', closeFullScreenView);
+function shuffle(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
-fetch('exercises.txt')
-  .then(response => {
-    if (!response.ok) throw new Error('Could not load exercises.txt');
-    return response.text();
-  })
-  .then(text => {
-    exerciseData = parseExercises(text);
-    outputEl.textContent = '';
-    fullScreenOutputEl.textContent = '';
-  })
-  .catch(err => {
-    outputEl.textContent = 'Could not load exercises.txt';
-    console.error(err);
-  });
+function normaliseMovement(value) {
+  if (value === 'combination') return 'combo';
+  return value;
+}
 
 function parseExercises(text) {
-  const data = {
-    single_hinge: [],
-    single_squat: [],
-    single_combo: [],
-    double_hinge: [],
-    double_squat: [],
-    double_combo: []
-  };
-
-  let currentSection = null;
   const lines = text.split(/\r?\n/);
+  const parsed = [];
+  let currentSection = '';
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
-    if (line.startsWith('//')) continue;
 
     if (line.startsWith('#')) {
-      const section = line.slice(1).trim().toLowerCase();
-      if (data.hasOwnProperty(section)) {
-        currentSection = section;
-      } else {
-        currentSection = null;
-      }
+      currentSection = line.replace('#', '').trim().toLowerCase();
       continue;
     }
 
-    if (!currentSection) continue;
+    const parts = line.split('|').map(part => part.trim());
+    if (parts.length < 2 || !currentSection) continue;
 
-    if (currentSection.endsWith('_combo')) {
-      const parts = line.split('|').map(x => x.trim()).filter(Boolean);
-      const name = parts[0];
-      const family = parts[1] || normaliseFamily(name);
-      data[currentSection].push({ name, family });
-    } else {
-      data[currentSection].push(line);
-    }
+    const [load, movement] = currentSection.split('_');
+    const name = parts[0];
+    const tag = parts[1];
+    const isSingleSide = parts[2]?.toLowerCase() === 'single';
+
+    parsed.push({
+      name,
+      tag,
+      load,
+      movement: normaliseMovement(movement),
+      sideMode: isSingleSide ? 'single' : 'normal',
+      slots: isSingleSide ? 2 : 1
+    });
   }
 
-  return data;
+  return parsed;
 }
 
-function normaliseFamily(name) {
-  return name
-    .toLowerCase()
-    .replace(/^double\s+/, '')
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+async function loadExercises() {
+  const response = await fetch('exercises.txt', { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error('Could not load exercises.txt');
+  }
+  const text = await response.text();
+  allExercises = parseExercises(text);
 }
 
-function shuffle(array) {
-  const arr = array.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-  }
-  return arr;
-}
-
-function sampleUniqueStrings(pool, wanted) {
-  const unique = [...new Set(pool)];
-  return shuffle(unique).slice(0, Math.min(wanted, unique.length));
-}
-
-function buildComboFamilyMap(comboPool) {
-  const familyMap = new Map();
-  for (const item of comboPool) {
-    if (!familyMap.has(item.family)) familyMap.set(item.family, []);
-    familyMap.get(item.family).push(item);
-  }
-  return familyMap;
-}
-
-function sampleComboVariants(comboPool, wanted) {
-  const familyMap = buildComboFamilyMap(comboPool);
-  const families = shuffle([...familyMap.keys()]).slice(0, wanted);
-  const chosen = [];
-  for (const family of families) {
-    const variants = shuffle(familyMap.get(family));
-    chosen.push(variants[0].name);
-  }
-  return chosen;
-}
-
-function getPools(load) {
-  const hinge = [];
-  const squat = [];
-  const combo = [];
-
-  if (load === 'single' || load === 'mixed') {
-    hinge.push(...exerciseData.single_hinge);
-    squat.push(...exerciseData.single_squat);
-    combo.push(...exerciseData.single_combo);
-  }
-  if (load === 'double' || load === 'mixed') {
-    hinge.push(...exerciseData.double_hinge);
-    squat.push(...exerciseData.double_squat);
-    combo.push(...exerciseData.double_combo);
-  }
-
-  return { hinge, squat, combo };
-}
-
-function generateMixedList(count, load, comboMode) {
-  const pools = getPools(load);
-  const hinge = pools.hinge;
-  const squat = pools.squat;
-  const combo = pools.combo;
-
-  const hingeNeeded = Math.ceil(count / 2);
-  const squatSlotNeeded = Math.floor(count / 2);
-
-  const chosenHinges = sampleUniqueStrings(hinge, hingeNeeded);
-
-  let chosenSquatSlots = [];
-  if (comboMode === 'exclude') {
-    chosenSquatSlots = sampleUniqueStrings(squat, squatSlotNeeded);
-  } else {
-    const uniqueSquats = [...new Set(squat)];
-    const comboFamilyCount = buildComboFamilyMap(combo).size;
-    const targetComboCount = Math.min(comboFamilyCount, Math.floor(squatSlotNeeded * 0.25));
-    const squatCount = Math.max(0, squatSlotNeeded - targetComboCount);
-
-    let chosenSquats = sampleUniqueStrings(uniqueSquats, squatCount);
-    let chosenCombos = sampleComboVariants(combo, targetComboCount);
-
-    if (chosenSquats.length + chosenCombos.length < squatSlotNeeded) {
-      const remainingSquats = uniqueSquats.filter(x => !chosenSquats.includes(x));
-      const stillNeeded = squatSlotNeeded - (chosenSquats.length + chosenCombos.length);
-      chosenSquats = chosenSquats.concat(shuffle(remainingSquats).slice(0, stillNeeded));
-    }
-
-    chosenSquatSlots = shuffle(chosenSquats.concat(chosenCombos)).slice(0, squatSlotNeeded);
-  }
-
-  const result = [];
-  let hi = 0;
-  let si = 0;
-
-  for (let i = 0; i < count; i++) {
-    if (i % 2 === 0) {
-      if (hi < chosenHinges.length) result.push(chosenHinges[hi++]);
-    } else {
-      if (si < chosenSquatSlots.length) result.push(chosenSquatSlots[si++]);
-    }
-  }
-
-  return result;
-}
-
-function buildOutputText(result, count) {
-  const lines = [];
-  if (result.length < count) {
-    lines.push('Only ' + result.length + ' available');
-    lines.push('');
-  }
-  result.forEach((exercise, index) => {
-    lines.push((index + 1) + '. ' + exercise);
+function getPool(movementValue, loadValue) {
+  return allExercises.filter(exercise => {
+    const movementMatch = movementValue === 'mixed' || exercise.movement === movementValue;
+    const loadMatch = loadValue === 'mixed' || exercise.load === loadValue;
+    return movementMatch && loadMatch;
   });
+}
+
+function expandExercise(exercise) {
+  if (exercise.sideMode === 'single') {
+    return [`${exercise.name} Right`, `${exercise.name} Left`];
+  }
+  return [exercise.name];
+}
+
+function buildExactSelection(pool, targetSlots) {
+  if (!pool.length) return null;
+
+  for (let attempt = 0; attempt < 500; attempt++) {
+    const remaining = shuffle(pool);
+    const chosen = [];
+    let slotsUsed = 0;
+
+    while (remaining.length && slotsUsed < targetSlots) {
+      const possible = remaining.filter(item => item.slots <= (targetSlots - slotsUsed));
+      if (!possible.length) break;
+
+      const picked = possible[Math.floor(Math.random() * possible.length)];
+      chosen.push(picked);
+      slotsUsed += picked.slots;
+
+      const index = remaining.indexOf(picked);
+      if (index >= 0) {
+        remaining.splice(index, 1);
+      }
+    }
+
+    if (slotsUsed === targetSlots) {
+      return chosen;
+    }
+  }
+
+  return null;
+}
+
+function formatSelection(selection) {
+  const lines = [];
+  let intervalNumber = 1;
+
+  for (const exercise of selection) {
+    for (const line of expandExercise(exercise)) {
+      lines.push(`${intervalNumber}. ${line}`);
+      intervalNumber += 1;
+    }
+  }
+
   return lines.join('\n');
 }
 
-function generate() {
+function showMessage(text) {
+  output.textContent = text;
+  full.textContent = text;
+}
+
+async function generateWorkout() {
   const movement = document.getElementById('movement').value;
   const load = document.getElementById('load').value;
-  const comboMode = document.getElementById('comboMode').value;
-  const count = parseInt(document.getElementById('count').value, 10);
+  const count = Number(document.getElementById('count').value);
 
   if (!Number.isInteger(count) || count < 1) {
-    outputEl.textContent = 'Enter a valid number';
-    fullScreenOutputEl.textContent = 'Enter a valid number';
+    showMessage('Please enter a valid interval number.');
     return;
   }
 
-  let result = [];
-
-  if (movement === 'hinge') {
-    const pools = getPools(load);
-    result = sampleUniqueStrings(pools.hinge, count);
+  if (!allExercises.length) {
+    try {
+      await loadExercises();
+    } catch (error) {
+      showMessage('Could not load exercises.txt');
+      return;
+    }
   }
 
-  if (movement === 'squat') {
-    const pools = getPools(load);
-    result = sampleUniqueStrings(pools.squat, count);
+  const pool = getPool(movement, load);
+
+  if (!pool.length) {
+    showMessage('No exercises found for that selection.');
+    return;
   }
 
-  if (movement === 'combo') {
-    const pools = getPools(load);
-    result = sampleComboVariants(pools.combo, count);
+  const selection = buildExactSelection(pool, count);
+
+  if (!selection) {
+    showMessage('Could not build that exact interval total with the available exercises. Try a different number or broaden the filter.');
+    return;
   }
 
-  if (movement === 'mixed') {
-    result = generateMixedList(count, load, comboMode);
-  }
-
-  const text = buildOutputText(result, count);
-  outputEl.textContent = text;
-  fullScreenOutputEl.textContent = text;
+  showMessage(formatSelection(selection));
 }
 
-function openFullScreenView() {
-  fullScreenOutputEl.textContent = outputEl.textContent;
-  selectorView.classList.add('hidden');
-  fullScreenView.classList.remove('hidden');
-}
+document.getElementById('generateBtn').onclick = generateWorkout;
 
-function closeFullScreenView() {
-  fullScreenView.classList.add('hidden');
-  selectorView.classList.remove('hidden');
-}
-</script>
+document.getElementById('fullScreenBtn').onclick = () => {
+  full.textContent = output.textContent;
+  selector.classList.add('hidden');
+  fullscreen.classList.remove('hidden');
+};
 
-<script>
-  const THEME_KEY = 'gymToolsTheme';
+document.getElementById('backBtn').onclick = () => {
+  fullscreen.classList.add('hidden');
+  selector.classList.remove('hidden');
+};
 
-  function applyTheme() {
-    const theme = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+function updateClock() {
+  const now = new Date();
+  const timeText =
+    now.getHours().toString().padStart(2, '0') + ':' +
+    now.getMinutes().toString().padStart(2, '0');
+
+  document.getElementById('utilityClock').textContent = timeText;
+
+  const fullScreenClock = document.getElementById('fullScreenClock');
+  if (fullScreenClock) {
+    fullScreenClock.textContent = timeText;
   }
+}
 
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
-    localStorage.setItem(THEME_KEY, current === 'dark' ? 'light' : 'dark');
-    applyTheme();
-  });
+setInterval(updateClock, 1000);
+updateClock();
 
+const key = 'gymTheme';
+
+function applyTheme() {
+  document.documentElement.classList.toggle(
+    'dark',
+    localStorage.getItem(key) !== 'light'
+  );
+}
+
+function toggleTheme() {
+  localStorage.setItem(
+    key,
+    localStorage.getItem(key) === 'light' ? 'dark' : 'light'
+  );
   applyTheme();
+}
+
+document.getElementById('themeToggle').onclick = toggleTheme;
+document.getElementById('themeToggleFull').onclick = toggleTheme;
+
+applyTheme();
+loadExercises().catch(() => {
+  showMessage('Could not load exercises.txt');
+});
 </script>
 
 </body>

@@ -2,27 +2,51 @@ const STORAGE_KEY = 'gymToolsSetCounterState';
 const SAVED_WORKOUTS_KEY = 'gymToolsSetCounterSavedWorkouts';
 const THEME_KEY = 'gymToolsTheme';
 
-const BLOCK_CONFIG = {
-  sets: { label: 'Sets', progressLabel: 'Set' },
-  quick_rest: { label: 'Quick Rest', progressLabel: 'Cycle' }
-};
-
-const MODE_VALUES = {
-  QUICK_REST: 'quick_rest',
-  SETS: 'sets',
-  SET_COUNTER: 'set_counter'
+const screens = {
+  menu: document.getElementById('screenMenu'),
+  quickSetup: document.getElementById('screenQuickSetup'),
+  quickTimer: document.getElementById('screenQuickTimer'),
+  setCounter: document.getElementById('screenSetCounter'),
+  fullWorkout: document.getElementById('screenFullWorkout')
 };
 
 const els = {
+  screenTitle: document.getElementById('screenTitle'),
+  backButton: document.getElementById('backButton'),
+  themeToggle: document.getElementById('themeToggle'),
+  utilityClock: document.getElementById('utilityClock'),
+
+  goQuickStart: document.getElementById('goQuickStart'),
+  goSetCounter: document.getElementById('goSetCounter'),
+  goFullWorkout: document.getElementById('goFullWorkout'),
+
+  quickRestSeconds: document.getElementById('quickRestSeconds'),
+  quickSetupStartBtn: document.getElementById('quickSetupStartBtn'),
+  quickSetupResetBtn: document.getElementById('quickSetupResetBtn'),
+  quickSetupSelectedLabel: document.getElementById('quickSetupSelectedLabel'),
+  quickSetsLabel: document.getElementById('quickSetsLabel'),
+  quickPresetLabel: document.getElementById('quickPresetLabel'),
+  quickStepLabel: document.getElementById('quickStepLabel'),
+  quickTimerCard: document.getElementById('quickTimerCard'),
+  quickTimerPhase: document.getElementById('quickTimerPhase'),
+  quickTimerDisplay: document.getElementById('quickTimerDisplay'),
+  quickTimerSubtext: document.getElementById('quickTimerSubtext'),
+  quickRestBtn: document.getElementById('quickRestBtn'),
+  quickPauseBtn: document.getElementById('quickPauseBtn'),
+  quickResetBtn: document.getElementById('quickResetBtn'),
+  quickPresetButtons: Array.from(document.querySelectorAll('[data-quick-preset]')),
+
+  setCounterValue: document.getElementById('setCounterValue'),
+  setCounterText: document.getElementById('setCounterText'),
+  setCounterNextBtn: document.getElementById('setCounterNextBtn'),
+  setCounterResetBtn: document.getElementById('setCounterResetBtn'),
+
   workoutName: document.getElementById('workoutName'),
   blockForm: document.getElementById('blockForm'),
-  blockType: document.getElementById('blockType'),
   blockRounds: document.getElementById('blockRounds'),
   blockRest: document.getElementById('blockRest'),
-  roundsFieldWrap: document.getElementById('roundsFieldWrap'),
-  roundsLabel: document.getElementById('roundsLabel'),
   addBlockBtn: document.getElementById('addBlockBtn'),
-  currentBlocksPanel: document.getElementById('currentBlocksPanel'),
+  resetBuilderBtn: document.getElementById('resetBuilderBtn'),
   blockList: document.getElementById('blockList'),
   currentWorkoutTitle: document.getElementById('currentWorkoutTitle'),
   currentBlockLabel: document.getElementById('currentBlockLabel'),
@@ -34,39 +58,33 @@ const els = {
   timerSubtext: document.getElementById('timerSubtext'),
   startWorkoutBtn: document.getElementById('startWorkoutBtn'),
   resetFlowBtn: document.getElementById('resetFlowBtn'),
-  resetBuilderBtn: document.getElementById('resetBuilderBtn'),
-  workoutComplete: document.getElementById('workoutComplete'),
   saveWorkoutBtn: document.getElementById('saveWorkoutBtn'),
-  savedWorkouts: document.getElementById('savedWorkouts'),
-  themeToggle: document.getElementById('themeToggle'),
-
-  modeQuickRest: document.getElementById('modeQuickRest'),
-  modeSets: document.getElementById('modeSets'),
-  modeSetCounter: document.getElementById('modeSetCounter'),
-  modeButtonsWrap: document.getElementById('modeButtons'),
-
-  builderPanelWrap: document.getElementById('builderPanelWrap'),
-  timerPanelWrap: document.getElementById('timerPanelWrap'),
-  savedWorkoutsPanel: document.getElementById('savedWorkoutsPanel')
+  workoutComplete: document.getElementById('workoutComplete'),
+  savedWorkouts: document.getElementById('savedWorkouts')
 };
+
+let currentScreen = 'menu';
+let screenTitleBase = 'Rest Timer';
 
 let appState = loadState();
 let savedWorkouts = loadSavedWorkouts();
-let timerInterval = null;
-let restRemaining = 0;
-let isRunning = false;
-let isPaused = false;
+
+let fullWorkoutTimerInterval = null;
+let quickTimerInterval = null;
 let audioContext = null;
-let quickRestState = createQuickRestState();
+
+let fullWorkoutRemaining = 0;
+let fullWorkoutIsRunning = false;
+let fullWorkoutIsPaused = false;
+
+let quickStartState = createQuickStartState();
 let setCounterState = createSetCounterState();
-let currentMode = getInitialMode();
 
 migrateLegacyState();
 applyTheme();
-syncLegacySelectorToMode();
-updateBuilderFields();
-renderAll();
+startUtilityClock();
 bindEvents();
+renderAll();
 
 function createDefaultState() {
   return {
@@ -79,39 +97,26 @@ function createDefaultState() {
       started: false,
       completed: false,
       currentBlockIndex: 0,
-      currentRound: 1
+      currentRound: 0
     }
   };
 }
 
-function createQuickRestState() {
-  const preset = clamp(Number(els.blockRest?.value), 0, 900);
+function createQuickStartState() {
+  const preset = clamp(Number(els.quickRestSeconds?.value), 0, 900);
   return {
-    active: false,
     preset,
     remaining: preset,
-    hasCompleted: false,
-    currentRound: 1
+    completedSets: 0,
+    running: false,
+    paused: false
   };
 }
 
 function createSetCounterState() {
   return {
-    current: 1,
-    active: false
+    completedSets: 0
   };
-}
-
-function getInitialMode() {
-  const legacyValue = els.blockType?.value;
-  if (
-    legacyValue === MODE_VALUES.SETS ||
-    legacyValue === MODE_VALUES.SET_COUNTER ||
-    legacyValue === MODE_VALUES.QUICK_REST
-  ) {
-    return legacyValue;
-  }
-  return MODE_VALUES.QUICK_REST;
 }
 
 function loadState() {
@@ -126,39 +131,46 @@ function loadState() {
   return createDefaultState();
 }
 
+function loadSavedWorkouts() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SAVED_WORKOUTS_KEY));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Failed to load saved workouts', error);
+    return [];
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+}
+
+function saveSavedWorkouts() {
+  localStorage.setItem(SAVED_WORKOUTS_KEY, JSON.stringify(savedWorkouts));
+}
+
 function migrateLegacyState() {
   let changed = false;
-  const validTypes = new Set(['sets', 'quick_rest']);
 
   appState.session.blocks = (appState.session.blocks || []).reduce((acc, block) => {
     if (!block || typeof block !== 'object') return acc;
 
     let type = block.type;
-    let rounds = Number(block.rounds) || 1;
-    const rest = clamp(Number(block.rest), 1, 900);
-
     if (type === 'standard_set' || type === 'superset' || type === 'triset') {
       type = 'sets';
       changed = true;
-    } else if (type === 'circuit') {
-      changed = true;
-      return acc;
     }
 
-    if (!validTypes.has(type)) {
+    if (type === 'circuit' || (type !== 'sets' && type !== 'quick_rest')) {
       changed = true;
       return acc;
-    }
-
-    if (type === 'quick_rest') {
-      rounds = 1;
     }
 
     acc.push({
       id: block.id || `block-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
       type,
-      rounds: clamp(rounds, 1, 20),
-      rest
+      rounds: type === 'quick_rest' ? 1 : clamp(Number(block.rounds) || 1, 1, 20),
+      rest: clamp(Number(block.rest), 0, 900)
     });
     return acc;
   }, []);
@@ -174,43 +186,44 @@ function migrateLegacyState() {
   }
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-}
-
-function loadSavedWorkouts() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SAVED_WORKOUTS_KEY));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error('Failed to load saved workouts', error);
-    return [];
-  }
-}
-
-function saveSavedWorkouts() {
-  localStorage.setItem(SAVED_WORKOUTS_KEY, JSON.stringify(savedWorkouts));
-}
-
 function bindEvents() {
-  els.blockType?.addEventListener('change', handleModeChangeFromSelector);
-  els.blockForm?.addEventListener('submit', handleAddBlock);
-  els.startWorkoutBtn?.addEventListener('click', handleStartPause);
-  els.resetFlowBtn?.addEventListener('click', resetFlowOnly);
-  els.resetBuilderBtn?.addEventListener('click', clearWorkout);
-  els.saveWorkoutBtn?.addEventListener('click', handleSaveOrExit);
   els.themeToggle?.addEventListener('click', toggleTheme);
+  els.backButton?.addEventListener('click', handleBackClick);
+
+  els.goQuickStart?.addEventListener('click', () => navigateTo('quickSetup'));
+  els.goSetCounter?.addEventListener('click', () => navigateTo('setCounter'));
+  els.goFullWorkout?.addEventListener('click', () => navigateTo('fullWorkout'));
+
+  els.quickSetupStartBtn?.addEventListener('click', startQuickStartFlow);
+  els.quickSetupResetBtn?.addEventListener('click', resetQuickStart);
+  els.quickRestBtn?.addEventListener('click', handleQuickRestPress);
+  els.quickResetBtn?.addEventListener('click', resetQuickStartFromTimer);
+
+  els.quickPresetButtons?.forEach((button) => {
+    button.addEventListener('click', () => setQuickPreset(Number(button.dataset.quickPreset)));
+  });
+
+  els.setCounterNextBtn?.addEventListener('click', () => {
+    setCounterState.completedSets += 1;
+    renderSetCounter();
+  });
+  els.setCounterResetBtn?.addEventListener('click', () => {
+    setCounterState = createSetCounterState();
+    renderSetCounter();
+  });
 
   els.workoutName?.addEventListener('input', (event) => {
     appState.session.name = event.target.value.trim() || 'Workout A';
     saveState();
-    renderHeader();
+    renderFullWorkoutHeader();
     renderSavedWorkouts();
   });
 
-  els.modeQuickRest?.addEventListener('click', () => setMode(MODE_VALUES.QUICK_REST));
-  els.modeSets?.addEventListener('click', () => setMode(MODE_VALUES.SETS));
-  els.modeSetCounter?.addEventListener('click', () => setMode(MODE_VALUES.SET_COUNTER));
+  els.blockForm?.addEventListener('submit', handleAddBlock);
+  els.resetBuilderBtn?.addEventListener('click', clearWorkout);
+  els.startWorkoutBtn?.addEventListener('click', handleFullWorkoutStartPause);
+  els.resetFlowBtn?.addEventListener('click', resetFullWorkoutFlowOnly);
+  els.saveWorkoutBtn?.addEventListener('click', saveCurrentWorkout);
 
   document.querySelectorAll('.stepper').forEach((stepper) => {
     stepper.addEventListener('click', (event) => {
@@ -221,89 +234,90 @@ function bindEvents() {
   });
 }
 
-function syncLegacySelectorToMode() {
-  if (els.blockType) {
-    els.blockType.value = currentMode;
-  }
-}
-
-function setMode(mode) {
-  if (!Object.values(MODE_VALUES).includes(mode)) {
-    mode = MODE_VALUES.QUICK_REST;
-  }
-
-  resetTimerState();
-  currentMode = mode;
-  syncLegacySelectorToMode();
-
-  if (isSetCounterModeSelected()) {
-    setCounterState = createSetCounterState();
-    setCounterState.active = true;
-  } else {
-    setCounterState.active = false;
-    quickRestState = createQuickRestState();
-  }
-
-  updateBuilderFields();
+function navigateTo(screen) {
+  currentScreen = screen;
+  stopQuickTimerIfHidden();
+  renderScreenState();
   renderAll();
 }
 
-function handleModeChangeFromSelector() {
-  setMode(els.blockType?.value || MODE_VALUES.QUICK_REST);
+function handleBackClick(event) {
+  if (currentScreen === 'menu') {
+    return;
+  }
+  event.preventDefault();
+  navigateTo('menu');
 }
 
-function getSelectedMode() {
-  return currentMode;
-}
-
-function isQuickRestModeSelected() {
-  return getSelectedMode() === MODE_VALUES.QUICK_REST;
-}
-
-function isSetsModeSelected() {
-  return getSelectedMode() === MODE_VALUES.SETS;
-}
-
-function isSetCounterModeSelected() {
-  return getSelectedMode() === MODE_VALUES.SET_COUNTER;
-}
-
-function updateModeButtons() {
-  const buttonMap = [
-    [els.modeQuickRest, MODE_VALUES.QUICK_REST],
-    [els.modeSets, MODE_VALUES.SETS],
-    [els.modeSetCounter, MODE_VALUES.SET_COUNTER]
-  ];
-
-  buttonMap.forEach(([button, mode]) => {
-    if (!button) return;
-    const isActive = currentMode === mode;
-    button.classList.toggle('active', isActive);
-    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+function renderScreenState() {
+  Object.entries(screens).forEach(([name, node]) => {
+    node?.classList.toggle('hidden', name !== currentScreen);
   });
+
+  const screenTitles = {
+    menu: 'Rest Timer',
+    quickSetup: 'Quick Start',
+    quickTimer: 'Quick Start',
+    setCounter: 'Set Counter',
+    fullWorkout: 'Full Workout'
+  };
+
+  screenTitleBase = screenTitles[currentScreen] || 'Rest Timer';
+  if (els.screenTitle) {
+    els.screenTitle.textContent = screenTitleBase;
+  }
+
+  if (els.backButton) {
+    if (currentScreen === 'menu') {
+      els.backButton.setAttribute('href', '../menu.html');
+    } else {
+      els.backButton.setAttribute('href', '#');
+    }
+  }
 }
 
-function updateBuilderFields() {
-  const isQuickRest = isQuickRestModeSelected();
-  const isSetCounter = isSetCounterModeSelected();
+function renderAll() {
+  renderScreenState();
+  renderQuickStart();
+  renderSetCounter();
+  renderFullWorkout();
+}
 
-  els.roundsFieldWrap?.classList.toggle('hidden', isQuickRest || isSetCounter);
-  els.addBlockBtn?.classList.toggle('hidden', isQuickRest || isSetCounter);
-  els.currentBlocksPanel?.classList.toggle('hidden', isQuickRest || isSetCounter);
+function startUtilityClock() {
+  updateUtilityClock();
+  window.setInterval(updateUtilityClock, 1000);
+}
 
-  if (els.saveWorkoutBtn) {
-    els.saveWorkoutBtn.disabled = false;
+function updateUtilityClock() {
+  if (!els.utilityClock) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  els.utilityClock.textContent = `${hh}:${mm}`;
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme();
+}
+
+function applyTheme() {
+  const theme = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('light', theme === 'light');
+}
+
+function setQuickPreset(value) {
+  const next = clamp(Number(value) || 0, 0, 900);
+  if (els.quickRestSeconds) {
+    els.quickRestSeconds.value = String(next);
   }
-
-  if (els.roundsLabel) {
-    els.roundsLabel.textContent = 'Number of sets';
+  quickStartState.preset = next;
+  if (!quickStartState.running) {
+    quickStartState.remaining = next;
   }
-
-  if (els.savedWorkoutsPanel) {
-    els.savedWorkoutsPanel.classList.toggle('hidden', isSetCounter);
-  }
-
-  updateModeButtons();
+  renderQuickStart();
 }
 
 function handleStepperClick(stepper, action) {
@@ -315,72 +329,316 @@ function handleStepperClick(stepper, action) {
   const min = Number(stepper.dataset.min);
   const max = Number(stepper.dataset.max);
   const current = Number(input.value) || 0;
-  const delta = action === 'increment' ? step : -step;
-  const next = clamp(current + delta, min, max);
+  const next = clamp(current + (action === 'increment' ? step : -step), min, max);
 
   input.value = String(next);
 
-  if (targetId === 'blockRest') {
-    handleRestValueChanged(next);
+  if (targetId === 'quickRestSeconds') {
+    quickStartState.preset = next;
+    if (!quickStartState.running && !quickStartState.paused) {
+      quickStartState.remaining = next;
+    }
+    renderQuickStart();
+    return;
   }
 
-  if (targetId === 'blockRounds' && !isQuickRestModeSelected() && !isSetCounterModeSelected()) {
-    renderFlow();
+  if (targetId === 'blockRounds' || targetId === 'blockRest') {
+    renderFullWorkoutFlow();
   }
 }
 
-function handleRestValueChanged(nextValue) {
-  const safeValue = clamp(Number(nextValue), 0, 900);
+function formatSetLabel(count, uppercase = false) {
+  const base = `${count} ${count === 1 ? 'Set' : 'Sets'}`;
+  return uppercase ? base.toUpperCase() : base;
+}
 
-  if (isQuickRestModeSelected()) {
-    quickRestState.preset = safeValue;
-    if (!quickRestState.active || !isRunning) {
-      quickRestState.remaining = safeValue;
+function startQuickStartFlow() {
+  unlockAudio();
+  clearQuickTimerInterval();
+  quickStartState.running = false;
+  quickStartState.paused = false;
+  quickStartState.remaining = quickStartState.preset;
+  navigateTo('quickTimer');
+}
+
+function handleQuickRestPress() {
+  if (quickStartState.running) return;
+
+  unlockAudio();
+  quickStartState.completedSets += 1;
+  quickStartState.remaining = quickStartState.preset;
+  quickStartState.running = true;
+  quickStartState.paused = false;
+
+  clearQuickTimerInterval();
+  renderQuickStart();
+
+  quickTimerInterval = window.setInterval(() => {
+    quickStartState.remaining -= 1;
+
+    if (quickStartState.remaining <= 0) {
+      quickStartState.remaining = 0;
+      clearQuickTimerInterval();
+      quickStartState.running = false;
+      quickStartState.paused = false;
+      playBeep();
+      renderQuickStart();
+      return;
     }
-    if (!isRunning) {
-      quickRestState.hasCompleted = false;
-    }
-    renderFlow();
-    renderControlButtons();
+
+    renderQuickStart();
+  }, 1000);
+}
+
+function toggleQuickPause() {
+  if (!quickStartState.running && !quickStartState.paused) return;
+
+  if (quickStartState.running) {
+    clearQuickTimerInterval();
+    quickStartState.running = false;
+    quickStartState.paused = true;
+  } else {
+    unlockAudio();
+    quickStartState.running = true;
+    quickStartState.paused = false;
+    clearQuickTimerInterval();
+    quickTimerInterval = window.setInterval(() => {
+      quickStartState.remaining -= 1;
+      if (quickStartState.remaining <= 0) {
+        quickStartState.remaining = 0;
+        clearQuickTimerInterval();
+        quickStartState.running = false;
+        quickStartState.paused = false;
+        playBeep();
+      }
+      renderQuickStart();
+    }, 1000);
+  }
+
+  renderQuickStart();
+}
+
+function resetQuickStart() {
+  clearQuickTimerInterval();
+  quickStartState = createQuickStartState();
+  renderQuickStart();
+}
+
+function resetQuickStartFromTimer() {
+  clearQuickTimerInterval();
+  quickStartState.completedSets = 0;
+  quickStartState.remaining = quickStartState.preset;
+  quickStartState.running = false;
+  quickStartState.paused = false;
+  renderQuickStart();
+}
+
+function stopQuickTimerIfHidden() {
+  if (currentScreen !== 'quickTimer' && quickStartState.running) {
+    clearQuickTimerInterval();
+    quickStartState.running = false;
+    quickStartState.paused = true;
+  }
+}
+
+function clearQuickTimerInterval() {
+  if (quickTimerInterval) {
+    clearInterval(quickTimerInterval);
+    quickTimerInterval = null;
+  }
+}
+
+function renderQuickStart() {
+  if (els.quickRestSeconds) {
+    els.quickRestSeconds.value = String(quickStartState.preset);
+  }
+  if (els.quickSetupSelectedLabel) {
+    els.quickSetupSelectedLabel.textContent = `${quickStartState.preset}s`;
+  }
+  if (els.quickPresetButtons) {
+    els.quickPresetButtons.forEach((button) => {
+      const isSelected = Number(button.dataset.quickPreset) === quickStartState.preset;
+      button.classList.toggle('primary-btn', isSelected);
+      button.classList.toggle('secondary-btn', !isSelected);
+      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    });
+  }
+  if (els.quickSetsLabel) {
+    els.quickSetsLabel.textContent = formatSetLabel(quickStartState.completedSets);
+  }
+  if (els.quickPresetLabel) {
+    els.quickPresetLabel.textContent = formatSeconds(quickStartState.preset);
+  }
+  if (els.quickStepLabel) {
+    els.quickStepLabel.textContent = quickStartState.running ? 'Rest running' : 'Ready';
+  }
+  if (els.quickTimerPhase) {
+    els.quickTimerPhase.textContent = quickStartState.running ? 'Rest' : 'Ready';
+  }
+  if (els.quickTimerDisplay) {
+    els.quickTimerDisplay.textContent = formatSeconds(quickStartState.remaining);
+  }
+  if (els.quickTimerSubtext) {
+    els.quickTimerSubtext.textContent = quickStartState.running ? 'Rest running.' : 'Ready';
+  }
+  if (els.quickTimerCard) {
+    els.quickTimerCard.classList.toggle('resting', quickStartState.running);
+    els.quickTimerCard.classList.toggle('active', !quickStartState.running && quickStartState.completedSets > 0);
+    els.quickTimerCard.classList.toggle('idle', !quickStartState.running && quickStartState.completedSets === 0);
+  }
+  if (els.quickRestBtn) {
+    els.quickRestBtn.disabled = quickStartState.running;
+  }
+}
+
+function renderSetCounter() {
+  if (els.setCounterValue) {
+    els.setCounterValue.textContent = String(setCounterState.completedSets);
+  }
+  if (els.setCounterText) {
+    els.setCounterText.textContent = formatSetLabel(setCounterState.completedSets, true);
   }
 }
 
 function handleAddBlock(event) {
   event.preventDefault();
-  const type = getSelectedMode();
-
-  if (type === MODE_VALUES.QUICK_REST || type === MODE_VALUES.SET_COUNTER) {
-    return;
-  }
-
-  const rounds = clamp(Number(els.blockRounds?.value), 1, 20);
-  const rest = clamp(Number(els.blockRest?.value), 0, 900);
 
   appState.session.blocks.push({
     id: `block-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-    type,
-    rounds,
-    rest
+    type: 'sets',
+    rounds: clamp(Number(els.blockRounds?.value), 1, 20),
+    rest: clamp(Number(els.blockRest?.value), 0, 900)
   });
 
   saveState();
-  renderAll();
+  renderFullWorkout();
 }
 
-function renderAll() {
+function clearWorkout() {
+  clearFullWorkoutTimer();
+  appState = createDefaultState();
+  fullWorkoutRemaining = 0;
+  fullWorkoutIsRunning = false;
+  fullWorkoutIsPaused = false;
+  saveState();
+  renderFullWorkout();
+}
+
+function resetFullWorkoutFlowOnly() {
+  clearFullWorkoutTimer();
+  appState.flow = createDefaultState().flow;
+  fullWorkoutRemaining = 0;
+  fullWorkoutIsRunning = false;
+  fullWorkoutIsPaused = false;
+  saveState();
+  renderFullWorkout();
+}
+
+function getCurrentBlock() {
+  return appState.session.blocks[appState.flow.currentBlockIndex] || null;
+}
+
+function handleFullWorkoutStartPause() {
+  if (!appState.session.blocks.length) return;
+
+  if (fullWorkoutIsRunning) {
+    clearFullWorkoutTimer();
+    fullWorkoutIsRunning = false;
+    fullWorkoutIsPaused = true;
+    renderFullWorkout();
+    return;
+  }
+
+  const block = getCurrentBlock();
+  if (!block) return;
+
+  if (appState.flow.completed) {
+    appState.flow = createDefaultState().flow;
+  }
+
+  if (!appState.flow.started) {
+    appState.flow.started = true;
+    appState.flow.currentBlockIndex = 0;
+    appState.flow.currentRound = 0;
+  }
+
+  if (fullWorkoutRemaining <= 0) {
+    fullWorkoutRemaining = block.rest;
+  }
+
+  fullWorkoutIsRunning = true;
+  fullWorkoutIsPaused = false;
+  saveState();
+  startFullWorkoutCountdown();
+}
+
+function startFullWorkoutCountdown() {
+  clearFullWorkoutTimer();
+  unlockAudio();
+  renderFullWorkoutFlow();
+
+  fullWorkoutTimerInterval = window.setInterval(() => {
+    fullWorkoutRemaining -= 1;
+    if (fullWorkoutRemaining <= 0) {
+      fullWorkoutRemaining = 0;
+      finishFullWorkoutCountdown();
+      return;
+    }
+    renderFullWorkoutFlow();
+  }, 1000);
+}
+
+function finishFullWorkoutCountdown() {
+  const block = getCurrentBlock();
+  if (!block) return;
+
+  clearFullWorkoutTimer();
+  fullWorkoutIsRunning = false;
+  fullWorkoutIsPaused = false;
+  playBeep();
+
+  if (appState.flow.currentRound < block.rounds) {
+    appState.flow.currentRound += 1;
+    fullWorkoutRemaining = block.rest;
+    saveState();
+    renderFullWorkout();
+    return;
+  }
+
+  if (appState.flow.currentBlockIndex < appState.session.blocks.length - 1) {
+    appState.flow.currentBlockIndex += 1;
+    appState.flow.currentRound = 0;
+    const nextBlock = getCurrentBlock();
+    fullWorkoutRemaining = nextBlock ? nextBlock.rest : 0;
+    saveState();
+    renderFullWorkout();
+    return;
+  }
+
+  appState.flow.completed = true;
+  fullWorkoutRemaining = 0;
+  saveState();
+  renderFullWorkout();
+}
+
+function clearFullWorkoutTimer() {
+  if (fullWorkoutTimerInterval) {
+    clearInterval(fullWorkoutTimerInterval);
+    fullWorkoutTimerInterval = null;
+  }
+}
+
+function renderFullWorkout() {
   if (els.workoutName) {
     els.workoutName.value = appState.session.name || 'Workout A';
   }
-
-  renderHeader();
+  renderFullWorkoutHeader();
   renderBlocks();
-  renderFlow();
+  renderFullWorkoutFlow();
   renderSavedWorkouts();
-  renderControlButtons();
-  updateBuilderFields();
 }
 
-function renderHeader() {
+function renderFullWorkoutHeader() {
   if (els.currentWorkoutTitle) {
     els.currentWorkoutTitle.textContent = appState.session.name || 'Workout A';
   }
@@ -396,21 +654,15 @@ function renderBlocks() {
   }
 
   appState.session.blocks.forEach((block, index) => {
-    const config = BLOCK_CONFIG[block.type];
     const item = document.createElement('div');
     item.className = 'block-item';
-
     if (appState.flow.started && index === appState.flow.currentBlockIndex && !appState.flow.completed) {
       item.classList.add('active-block');
     }
 
-    const meta = block.type === 'sets'
-      ? `${config.progressLabel}s: ${block.rounds} · Rest: ${formatSeconds(block.rest)}`
-      : `Rest: ${formatSeconds(block.rest)} · Manual restart`;
-
     item.innerHTML = `
-      <div class="block-title">${index + 1}. ${config.label}</div>
-      <div class="block-meta">${meta}</div>
+      <div class="block-title">${index + 1}. Sets</div>
+      <div class="block-meta">Sets: ${block.rounds} · Rest: ${formatSeconds(block.rest)}</div>
       <div class="block-item-actions">
         <button class="secondary-btn" type="button" data-action="up" data-id="${block.id}">Move Up</button>
         <button class="secondary-btn" type="button" data-action="down" data-id="${block.id}">Move Down</button>
@@ -429,40 +681,29 @@ function renderBlocks() {
 }
 
 function handleBlockAction(action, id) {
-  const idx = appState.session.blocks.findIndex((block) => block.id === id);
-  if (idx === -1) return;
+  const index = appState.session.blocks.findIndex((block) => block.id === id);
+  if (index === -1) return;
 
   if (action === 'delete') {
-    appState.session.blocks.splice(idx, 1);
+    appState.session.blocks.splice(index, 1);
   }
-  if (action === 'up' && idx > 0) {
-    [appState.session.blocks[idx - 1], appState.session.blocks[idx]] = [appState.session.blocks[idx], appState.session.blocks[idx - 1]];
+  if (action === 'up' && index > 0) {
+    [appState.session.blocks[index - 1], appState.session.blocks[index]] = [appState.session.blocks[index], appState.session.blocks[index - 1]];
   }
-  if (action === 'down' && idx < appState.session.blocks.length - 1) {
-    [appState.session.blocks[idx + 1], appState.session.blocks[idx]] = [appState.session.blocks[idx], appState.session.blocks[idx + 1]];
+  if (action === 'down' && index < appState.session.blocks.length - 1) {
+    [appState.session.blocks[index + 1], appState.session.blocks[index]] = [appState.session.blocks[index], appState.session.blocks[index + 1]];
   }
 
-  resetTimerState();
+  clearFullWorkoutTimer();
+  fullWorkoutRemaining = 0;
+  fullWorkoutIsRunning = false;
+  fullWorkoutIsPaused = false;
   appState.flow = createDefaultState().flow;
   saveState();
-  renderAll();
+  renderFullWorkout();
 }
 
-function getCurrentBlock() {
-  return appState.session.blocks[appState.flow.currentBlockIndex] || null;
-}
-
-function renderFlow() {
-  if (isSetCounterModeSelected()) {
-    renderSetCounterFlow();
-    return;
-  }
-
-  if (isQuickRestModeSelected()) {
-    renderQuickRestFlow();
-    return;
-  }
-
+function renderFullWorkoutFlow() {
   const block = getCurrentBlock();
   els.workoutComplete?.classList.toggle('hidden', !appState.flow.completed);
 
@@ -470,7 +711,8 @@ function renderFlow() {
     if (els.currentBlockLabel) els.currentBlockLabel.textContent = 'No blocks';
     if (els.currentProgressLabel) els.currentProgressLabel.textContent = '—';
     if (els.currentStepLabel) els.currentStepLabel.textContent = '—';
-    setTimerDisplay('Ready', '00:00', 'Build your workout, then press Start.', 'idle');
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Ready', '00:00', 'Build your workout, then press Start.', 'idle');
+    if (els.startWorkoutBtn) els.startWorkoutBtn.textContent = 'Start';
     return;
   }
 
@@ -478,413 +720,38 @@ function renderFlow() {
     if (els.currentBlockLabel) els.currentBlockLabel.textContent = 'Complete';
     if (els.currentProgressLabel) els.currentProgressLabel.textContent = 'Finished';
     if (els.currentStepLabel) els.currentStepLabel.textContent = '—';
-    setTimerDisplay('Complete', '00:00', 'Workout complete.', 'idle');
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Complete', '00:00', 'Workout complete.', 'active');
+    if (els.startWorkoutBtn) els.startWorkoutBtn.textContent = 'Start';
     return;
   }
-
-  const config = BLOCK_CONFIG[block.type];
 
   if (els.currentBlockLabel) {
-    els.currentBlockLabel.textContent = `${config.label} (${appState.flow.currentBlockIndex + 1} of ${appState.session.blocks.length})`;
+    els.currentBlockLabel.textContent = `Sets (${appState.flow.currentBlockIndex + 1} of ${appState.session.blocks.length})`;
   }
-
   if (els.currentProgressLabel) {
-    els.currentProgressLabel.textContent = block.type === 'sets'
-      ? `${config.progressLabel} ${appState.flow.currentRound} of ${block.rounds}`
-      : 'Single countdown';
+    els.currentProgressLabel.textContent = `${formatSetLabel(appState.flow.currentRound)} of ${block.rounds}`;
   }
-
   if (els.currentStepLabel) {
-    els.currentStepLabel.textContent = block.type === 'sets' ? 'Rest' : 'Quick Rest';
+    els.currentStepLabel.textContent = fullWorkoutIsRunning ? 'Rest' : fullWorkoutIsPaused ? 'Paused' : 'Ready';
   }
 
-  if (!appState.flow.started && !isRunning && !isPaused) {
-    const readyDisplay = block.rest > 0 ? formatSeconds(block.rest) : '00:00';
-    const readyText = block.type === 'quick_rest'
-      ? 'Press Start to begin Quick Rest.'
-      : 'Press Start to begin your set timer.';
-    setTimerDisplay('Ready', readyDisplay, readyText, 'idle');
-    return;
+  if (!appState.flow.started && !fullWorkoutIsRunning && !fullWorkoutIsPaused) {
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Ready', formatSeconds(block.rest), 'Press Start to begin your first rest.', 'idle');
+  } else if (fullWorkoutIsRunning) {
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Rest', formatSeconds(fullWorkoutRemaining), 'Rest running.', 'resting');
+  } else if (fullWorkoutIsPaused) {
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Paused', formatSeconds(fullWorkoutRemaining), 'Press Start to resume.', 'idle');
+  } else {
+    setTimerCard(els.timerCard, els.timerPhase, els.timerDisplay, els.timerSubtext, 'Ready', formatSeconds(fullWorkoutRemaining || block.rest), 'Press Start when you finish the next set.', 'active');
   }
 
-  if (isPaused) {
-    setTimerDisplay('Paused', formatSeconds(restRemaining), 'Press Start to resume.', 'idle');
-    return;
+  if (els.startWorkoutBtn) {
+    els.startWorkoutBtn.textContent = fullWorkoutIsRunning ? 'Pause' : 'Start';
   }
-
-  if (!isRunning) {
-    const idleText = block.type === 'quick_rest'
-      ? 'Ready for the next manual Quick Rest.'
-      : 'Press Start to continue from the current block.';
-    setTimerDisplay('Ready', formatSeconds(restRemaining || block.rest), idleText, 'idle');
-  }
-}
-
-function renderQuickRestFlow() {
-  els.workoutComplete?.classList.add('hidden');
-
-  const preset = clamp(Number(els.blockRest?.value), 0, 900);
-  if (!isRunning && !quickRestState.active) {
-    quickRestState.preset = preset;
-    quickRestState.remaining = preset;
-  }
-
-  if (els.currentBlockLabel) els.currentBlockLabel.textContent = 'Quick Rest';
-  if (els.currentProgressLabel) els.currentProgressLabel.textContent = `Set ${quickRestState.currentRound}`;
-  if (els.currentStepLabel) els.currentStepLabel.textContent = 'Quick Rest';
-
-  if (isPaused) {
-    setTimerDisplay('Paused', formatSeconds(quickRestState.remaining), 'Press Start to resume Quick Rest.', 'idle');
-    return;
-  }
-
-  if (isRunning) {
-    setTimerDisplay('Rest', formatSeconds(quickRestState.remaining), 'Quick Rest running.', 'resting');
-    return;
-  }
-
-  const subtext = quickRestState.hasCompleted
-    ? 'Quick Rest complete. Press Start for the next rest.'
-    : 'Press Start to begin Quick Rest.';
-  setTimerDisplay('Ready', formatSeconds(quickRestState.remaining), subtext, 'idle');
-}
-
-function renderSetCounterFlow() {
-  els.workoutComplete?.classList.add('hidden');
-
-  if (els.currentBlockLabel) els.currentBlockLabel.textContent = 'Set Counter';
-  if (els.currentProgressLabel) els.currentProgressLabel.textContent = `Set ${setCounterState.current}`;
-  if (els.currentStepLabel) els.currentStepLabel.textContent = 'Tap Next Set';
-
-  setTimerDisplay(
-    'Set Counter',
-    String(setCounterState.current),
-    'Tap Next Set to continue',
-    'active'
-  );
-}
-
-function renderControlButtons() {
-  if (!els.startWorkoutBtn || !els.resetFlowBtn || !els.saveWorkoutBtn) return;
-
-  if (isSetCounterModeSelected()) {
-    els.startWorkoutBtn.disabled = false;
-    els.startWorkoutBtn.textContent = 'Next Set';
-
-    els.resetFlowBtn.disabled = false;
-    els.resetFlowBtn.textContent = 'Reset';
-
-    els.saveWorkoutBtn.disabled = false;
-    els.saveWorkoutBtn.textContent = 'Exit';
-    return;
-  }
-
-  els.startWorkoutBtn.disabled = false;
-  els.startWorkoutBtn.textContent = isRunning ? 'Pause' : 'Start';
-
-  els.resetFlowBtn.disabled = false;
-  els.resetFlowBtn.textContent = 'Reset Flow';
-
-  els.saveWorkoutBtn.disabled = isQuickRestModeSelected() || !appState.session.blocks.length;
-  els.saveWorkoutBtn.textContent = 'Save Workout';
-}
-
-function handleStartPause() {
-  if (isSetCounterModeSelected()) {
-    handleSetCounterNext();
-    return;
-  }
-
-  if (isQuickRestModeSelected()) {
-    handleQuickRestStartPause();
-    return;
-  }
-
-  if (!appState.session.blocks.length) return;
-
-  if (isRunning) {
-    pauseTimer();
-    return;
-  }
-
-  const block = getCurrentBlock();
-  if (!block) return;
-
-  if (appState.flow.completed) {
-    appState.flow = {
-      started: true,
-      completed: false,
-      currentBlockIndex: 0,
-      currentRound: 1
-    };
-  }
-
-  if (!appState.flow.started) {
-    appState.flow.started = true;
-    appState.flow.currentBlockIndex = Math.min(
-      appState.flow.currentBlockIndex,
-      Math.max(appState.session.blocks.length - 1, 0)
-    );
-    appState.flow.currentRound = 1;
-  }
-
-  if (!restRemaining || restRemaining <= 0) {
-    restRemaining = block.rest;
-  }
-
-  saveState();
-  startCurrentCountdown();
-}
-
-function handleQuickRestStartPause() {
-  if (isRunning) {
-    pauseTimer();
-    return;
-  }
-
-  quickRestState.preset = clamp(Number(els.blockRest?.value), 0, 900);
-
-  if (!quickRestState.active || quickRestState.remaining < 0 || quickRestState.remaining > 900) {
-    quickRestState.remaining = quickRestState.preset;
-  }
-
-  quickRestState.active = true;
-  quickRestState.hasCompleted = false;
-  startQuickRestCountdown();
-}
-
-function startQuickRestCountdown() {
-  clearTimerInterval();
-  unlockAudio();
-  isRunning = true;
-  isPaused = false;
-  renderControlButtons();
-  setTimerDisplay('Rest', formatSeconds(quickRestState.remaining), 'Quick Rest running.', 'resting');
-
-  timerInterval = window.setInterval(() => {
-    quickRestState.remaining -= 1;
-
-    if (quickRestState.remaining <= 0) {
-      quickRestState.remaining = 0;
-      setTimerDisplay('Rest', formatSeconds(quickRestState.remaining), 'Quick Rest running.', 'resting');
-      finishQuickRestCountdown();
-      return;
-    }
-
-    setTimerDisplay('Rest', formatSeconds(quickRestState.remaining), 'Quick Rest running.', 'resting');
-  }, 1000);
-}
-
-function startCurrentCountdown() {
-  const block = getCurrentBlock();
-  if (!block) return;
-
-  clearTimerInterval();
-  unlockAudio();
-  isRunning = true;
-  isPaused = false;
-  renderControlButtons();
-  setTimerDisplay(
-    'Rest',
-    formatSeconds(restRemaining),
-    block.type === 'quick_rest' ? 'Quick Rest running.' : 'Set timer running.',
-    'resting'
-  );
-
-  timerInterval = window.setInterval(() => {
-    restRemaining -= 1;
-
-    if (restRemaining <= 0) {
-      restRemaining = 0;
-      updateRunningDisplay();
-      finishCountdown();
-      return;
-    }
-
-    updateRunningDisplay();
-  }, 1000);
-}
-
-function updateRunningDisplay() {
-  const block = getCurrentBlock();
-  if (!block) return;
-  const subtext = block.type === 'quick_rest' ? 'Quick Rest running.' : 'Set timer running.';
-  setTimerDisplay('Rest', formatSeconds(restRemaining), subtext, 'resting');
-}
-
-function finishQuickRestCountdown() {
-  clearTimerInterval();
-  isRunning = false;
-  isPaused = false;
-  quickRestState.active = false;
-  quickRestState.hasCompleted = true;
-  quickRestState.preset = clamp(Number(els.blockRest?.value), 0, 900);
-  quickRestState.remaining = quickRestState.preset;
-  quickRestState.currentRound += 1;
-  playBeep();
-  renderAll();
-}
-
-function finishCountdown() {
-  const block = getCurrentBlock();
-  if (!block) return;
-
-  clearTimerInterval();
-  isRunning = false;
-  isPaused = false;
-  playBeep();
-
-  if (block.type === 'quick_rest') {
-    restRemaining = block.rest;
-    appState.flow.started = true;
-    saveState();
-    renderAll();
-    setTimerDisplay('Ready', formatSeconds(block.rest), 'Quick Rest complete. Press Start for the next rest.', 'idle');
-    return;
-  }
-
-  if (appState.flow.currentRound < block.rounds) {
-    appState.flow.currentRound += 1;
-    restRemaining = block.rest;
-    saveState();
-    renderAll();
-    setTimerDisplay('Ready', formatSeconds(block.rest), 'Set complete. Press Start for the next set.', 'idle');
-    return;
-  }
-
-  if (appState.flow.currentBlockIndex < appState.session.blocks.length - 1) {
-    appState.flow.currentBlockIndex += 1;
-    appState.flow.currentRound = 1;
-    const nextBlock = getCurrentBlock();
-    restRemaining = nextBlock ? nextBlock.rest : 0;
-    saveState();
-    renderAll();
-
-    if (nextBlock) {
-      const nextText = nextBlock.type === 'quick_rest'
-        ? 'Quick Rest is ready. Press Start to begin.'
-        : 'Next block ready. Press Start to begin.';
-      setTimerDisplay('Ready', formatSeconds(nextBlock.rest), nextText, 'idle');
-    }
-    return;
-  }
-
-  appState.flow.completed = true;
-  restRemaining = 0;
-  saveState();
-  renderAll();
-}
-
-function pauseTimer() {
-  clearTimerInterval();
-  isRunning = false;
-  isPaused = true;
-  renderAll();
-}
-
-function handleSetCounterNext() {
-  if (!isSetCounterModeSelected()) return;
-  setCounterState.current += 1;
-  setCounterState.active = true;
-  renderAll();
-}
-
-function resetSetCounter() {
-  setCounterState.current = 1;
-  setCounterState.active = isSetCounterModeSelected();
-  renderAll();
-}
-
-function handleSetCounterExit() {
-  setCounterState = createSetCounterState();
-  setMode(MODE_VALUES.QUICK_REST);
-}
-
-function resetFlowOnly() {
-  clearTimerInterval();
-
-  if (isSetCounterModeSelected()) {
-    resetSetCounter();
-    return;
-  }
-
-  if (isQuickRestModeSelected()) {
-    quickRestState = createQuickRestState();
-    restRemaining = 0;
-    isRunning = false;
-    isPaused = false;
-    renderAll();
-    return;
-  }
-
-  appState.flow = createDefaultState().flow;
-  restRemaining = 0;
-  isRunning = false;
-  isPaused = false;
-  saveState();
-  renderAll();
-}
-
-function clearWorkout() {
-  clearTimerInterval();
-  appState = createDefaultState();
-  quickRestState = createQuickRestState();
-  setCounterState = createSetCounterState();
-  restRemaining = 0;
-  isRunning = false;
-  isPaused = false;
-  saveState();
-  renderAll();
-}
-
-function resetTimerState() {
-  clearTimerInterval();
-  restRemaining = 0;
-  isRunning = false;
-  isPaused = false;
-}
-
-function clearTimerInterval() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-}
-
-function setTimerDisplay(phase, display, subtext, mode) {
-  if (els.timerPhase) els.timerPhase.textContent = phase;
-  if (els.timerDisplay) els.timerDisplay.textContent = display;
-  if (els.timerSubtext) els.timerSubtext.textContent = subtext;
-
-  if (els.timerCard) {
-    els.timerCard.classList.remove('idle', 'resting', 'active');
-    els.timerCard.classList.add(mode);
-  }
-}
-
-function formatSeconds(value) {
-  const safe = Math.max(0, Number(value) || 0);
-  const mins = Math.floor(safe / 60);
-  const secs = safe % 60;
-  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-}
-
-function clamp(value, min, max) {
-  if (Number.isNaN(value)) return min;
-  return Math.min(Math.max(value, min), max);
-}
-
-function handleSaveOrExit() {
-  if (isSetCounterModeSelected()) {
-    handleSetCounterExit();
-    return;
-  }
-
-  saveCurrentWorkout();
 }
 
 function saveCurrentWorkout() {
-  if (isQuickRestModeSelected() || isSetCounterModeSelected() || !appState.session.blocks.length) return;
+  if (!appState.session.blocks.length) return;
 
   const copy = JSON.parse(JSON.stringify(appState.session));
   copy.id = `session-${Date.now()}`;
@@ -898,7 +765,6 @@ function saveCurrentWorkout() {
 
   saveSavedWorkouts();
   renderSavedWorkouts();
-  renderControlButtons();
 }
 
 function renderSavedWorkouts() {
@@ -940,122 +806,90 @@ function handleSavedWorkoutAction(action, id) {
     savedWorkouts.splice(index, 1);
     saveSavedWorkouts();
     renderSavedWorkouts();
-    renderControlButtons();
     return;
   }
 
   if (action === 'load') {
-    resetTimerState();
-    quickRestState = createQuickRestState();
-    setCounterState = createSetCounterState();
+    clearFullWorkoutTimer();
+    fullWorkoutRemaining = 0;
+    fullWorkoutIsRunning = false;
+    fullWorkoutIsPaused = false;
 
     const loaded = JSON.parse(JSON.stringify(savedWorkouts[index]));
-    loaded.blocks = (loaded.blocks || []).map((block) => {
-      if (block.type === 'standard_set' || block.type === 'superset' || block.type === 'triset') {
-        return {
-          ...block,
-          type: 'sets',
-          rounds: clamp(Number(block.rounds) || 1, 1, 20),
-          rest: clamp(Number(block.rest), 0, 900)
-        };
-      }
-
-      if (block.type === 'quick_rest') {
-        return {
-          ...block,
-          type: 'quick_rest',
-          rounds: 1,
-          rest: clamp(Number(block.rest), 0, 900)
-        };
-      }
-
-      return {
-        ...block,
-        type: 'sets',
-        rounds: clamp(Number(block.rounds) || 1, 1, 20),
-        rest: clamp(Number(block.rest), 0, 900)
-      };
-    }).filter((block) => block.type !== 'circuit');
+    loaded.blocks = (loaded.blocks || []).map((block) => ({
+      id: block.id || `block-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      type: 'sets',
+      rounds: clamp(Number(block.rounds) || 1, 1, 20),
+      rest: clamp(Number(block.rest), 0, 900)
+    }));
 
     appState.session = loaded;
     appState.flow = createDefaultState().flow;
     saveState();
-    renderAll();
+    navigateTo('fullWorkout');
   }
 }
 
-function toggleTheme() {
-  const current = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem(THEME_KEY, next);
-  applyTheme();
-}
-
-function applyTheme() {
-  const theme = localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
-  document.body.classList.toggle('light', theme === 'light');
-}
-
-function unlockAudio() {
-  try {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-  } catch (error) {
-    console.warn('Audio init failed', error);
+function setTimerCard(card, phaseEl, displayEl, subtextEl, phase, display, subtext, mode) {
+  if (phaseEl) phaseEl.textContent = phase;
+  if (displayEl) displayEl.textContent = display;
+  if (subtextEl) subtextEl.textContent = subtext;
+  if (card) {
+    card.classList.remove('idle', 'resting', 'active');
+    card.classList.add(mode);
   }
 }
 
-function playBeep() {
-  try {
-    unlockAudio();
-    if (!audioContext) return;
+function formatSeconds(value) {
+  const safe = Math.max(0, Number(value) || 0);
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
 
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.18, audioContext.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2);
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.22);
-  } catch (error) {
-    console.warn('Beep failed', error);
-  }
+function clamp(value, min, max) {
+  if (Number.isNaN(value)) return min;
+  return Math.min(Math.max(value, min), max);
 }
 
 function escapeHtml(value) {
   return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
-function startClock() {
-  const clockEl = document.getElementById('gymClock');
-  if (!clockEl) return;
-
-  function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    clockEl.textContent = `${hours}:${minutes}`;
+function unlockAudio() {
+  if (!audioContext) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    audioContext = new AudioCtx();
   }
-
-  updateClock();
-  setInterval(updateClock, 1000);
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => {});
+  }
 }
 
-startClock();
+function playBeep() {
+  unlockAudio();
+  if (!audioContext) return;
+
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(880, now);
+
+  gainNode.gain.setValueAtTime(0.0001, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  oscillator.start(now);
+  oscillator.stop(now + 0.24);
+}

@@ -77,7 +77,10 @@
       z-index: 10;
     }
     .corner-info {
-      font-size: clamp(48px, 6vw, 72px);
+      position: fixed;
+      left: var(--safe-left);
+      bottom: var(--safe-bottom);
+      font-size: clamp(44px, 5vw, 58px);
       color: var(--muted);
       display: flex;
       flex-direction: column;
@@ -85,6 +88,8 @@
       line-height: 1;
       z-index: 10;
       pointer-events: none;
+      background: var(--bg);
+      padding: 6px 10px 4px 0;
     }
     .menu-btn, .small-btn, .action-btn, .list-btn, .pm-btn {
       border: 1px solid var(--btn-border);
@@ -179,11 +184,11 @@
     }
 
     .setup-screen, .timer-screen, .complete-screen, .saved-screen {
-      padding: calc(var(--safe-top) + 84px) clamp(16px, 4vw, 40px) calc(var(--safe-bottom) + 20px);
+      padding: calc(var(--safe-top) + 84px) clamp(16px, 4vw, 40px) calc(var(--safe-bottom) + 72px);
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      gap: 18px;
+      gap: 14px;
       text-align: center;
     }
     .screen-title {
@@ -249,11 +254,13 @@
     }
     .timer-main {
       width: 100%;
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      gap: 10px;
       padding: 0 18px;
     }
     .stopwatch-main {
@@ -276,27 +283,27 @@
       font-size: clamp(20px, 2.8vw, 28px);
     }
     .timer-value {
-      font-size: clamp(92px, 23vw, 240px);
-      line-height: 0.92;
+      font-size: clamp(72px, 18vw, 180px);
+      line-height: 0.9;
       font-weight: 700;
       letter-spacing: -0.04em;
     }
     .timer-round {
-      font-size: clamp(24px, 4vw, 42px);
+      font-size: clamp(20px, 3.2vw, 32px);
       color: rgba(255,255,255,0.92);
-      min-height: 1.2em;
+      min-height: 1.1em;
     }
     .timer-label {
-      font-size: clamp(36px, 6vw, 62px);
+      font-size: clamp(28px, 4.6vw, 44px);
       font-weight: 700;
       letter-spacing: 0.04em;
-      min-height: 1.2em;
+      min-height: 1.1em;
     }
     .timer-actions {
-      width: min(920px, 100%);
+      width: min(720px, 100%);
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 10px;
       margin-top: 0;
     }
     .timer-actions.secondary {
@@ -398,13 +405,11 @@
       display: flex;
       justify-content: flex-end;
     }
-    .setup-screen .corner-info,
-    .timer-screen .corner-info,
-    .saved-screen .corner-info,
-    .complete-screen .corner-info {
-      position: fixed;
-      left: var(--safe-left);
-      bottom: var(--safe-bottom);
+
+    @media (max-width: 760px) {
+      .corner-info {
+        font-size: clamp(40px, 11vw, 52px);
+      }
     }
 </style>
 </head>
@@ -422,8 +427,9 @@
 
   <section id="hiitSetup" class="screen setup-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="hiitInfo">Mon 1 • 12:00</div></div>
+      <div class="corner-info"><div id="hiitInfo">12:00</div></div>
       <button id="hiitExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="screen-title">HIIT</div>
     <div class="settings-panel">
@@ -454,8 +460,9 @@
 
   <section id="intervalSetup" class="screen setup-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="intervalInfo">Mon 1 • 12:00</div></div>
+      <div class="corner-info"><div id="intervalInfo">12:00</div></div>
       <button id="intervalExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="screen-title">Interval Blocks</div>
     <div class="settings-panel">
@@ -480,8 +487,9 @@
 
   <section id="countdownSetup" class="screen setup-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="countdownInfo">Mon 1 • 12:00</div></div>
+      <div class="corner-info"><div id="countdownInfo">12:00</div></div>
       <button id="countdownExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="screen-title">Countdown</div>
     <div class="settings-panel">
@@ -499,8 +507,9 @@
 
   <section id="stopwatchScreen" class="screen timer-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="stopwatchInfo">Mon 1 • 12:00</div></div>
-      <button id="stopwatchExitBtn" class="small-btn">Exit</button>
+      <div class="corner-info"><div id="stopwatchInfo">12:00</div></div>
+      <button id="stopwatchExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="screen-title">Stopwatch</div>
     <div class="timer-main stopwatch-main">
@@ -516,8 +525,9 @@
 
   <section id="timerScreen" class="screen timer-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="timerInfo">Mon 1 • 12:00</div></div>
-      <button id="timerExitBtn" class="small-btn">Exit</button>
+      <div class="corner-info"><div id="timerInfo">12:00</div></div>
+      <button id="timerExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div id="countdownOverlay" class="countdown-overlay">3</div>
     <div class="timer-main">
@@ -535,8 +545,9 @@
 
   <section id="savedScreen" class="screen saved-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="savedInfo">Mon 1 • 12:00</div></div>
+      <div class="corner-info"><div id="savedInfo">12:00</div></div>
       <button id="savedExitBtn" class="small-btn">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="screen-title">Saved Sessions</div>
     <div id="savedList" class="saved-list"></div>
@@ -546,7 +557,9 @@
 
   <section id="completeScreen" class="screen complete-screen">
     <div class="topbar">
-      <div class="corner-info"><div id="completeInfo">Mon 1 • 12:00</div></div>
+      <div class="corner-info"><div id="completeInfo">12:00</div></div>
+      <button class="small-btn back-clock">Back</button>
+      <button class="small-btn theme-toggle-btn" type="button">Theme</button>
     </div>
     <div class="complete-text">Session Complete</div>
     <div class="action-row" style="width:min(720px,100%); grid-template-columns: 1fr 1fr;">
@@ -1275,6 +1288,13 @@
         const current = localStorage.getItem('gymToolsTheme') === 'light' ? 'light' : 'dark';
         localStorage.setItem('gymToolsTheme', current === 'dark' ? 'light' : 'dark');
         applyGymTimerTheme();
+      });
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const current = localStorage.getItem('gymToolsTheme') === 'light' ? 'light' : 'dark';
+          localStorage.setItem('gymToolsTheme', current === 'dark' ? 'light' : 'dark');
+          applyGymTimerTheme();
+        });
       });
     }
 
